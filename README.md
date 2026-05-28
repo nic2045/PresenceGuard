@@ -63,6 +63,16 @@ Zeitfenster per Drag & Drop ziehen — mehrere Fenster pro Tag möglich.
 
 ## Install
 
+Es gibt **zwei Wege** – nutze einen davon:
+
+### A) Custom Integration (UI-nativ, empfohlen)
+Anmeldung **direkt in Home Assistant** (OAuth2), automatische Token-Erneuerung
+und eine **Reauth-Karte in Reparaturen**, wenn die Anmeldung abläuft – ohne
+`token_setup.sh`/`secrets.yaml`. Per **HACS** (Custom repository, Typ
+*Integration*) oder `custom_components/presenceguard/` nach `<config>/` kopieren.
+Details: **[`custom_components/presenceguard/README.md`](custom_components/presenceguard/README.md)**.
+
+### B) Klassisch (YAML + bash)
 **Blueprint importieren** (My-HA-Badge oben) oder manuell:
 Einstellungen → Automationen & Szenen → Blueprints → *Blueprint importieren* →
 URL einfügen:
