@@ -53,6 +53,7 @@ Versionsstrings nicht manuell editieren — das übernimmt der Workflow.
 | `presenceguard/command_line_presenceguard.yaml` | Token-Sensor |
 | `presenceguard/template_presenceguard.yaml` | Status-Sensor `binary_sensor.presenceguard_token` (UI: Token-Daten vorhanden?) |
 | `presenceguard/shell_commands.yaml` | Token-Refresh-Aufruf |
+| `presenceguard/setup_presenceguard.sh` | Interaktiver Setup-Wizard (Einrichtung end-to-end) |
 
 ## HA Custom Tags
 

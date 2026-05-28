@@ -52,6 +52,7 @@ Auth-Weg delegiert `Presence.ReadWrite` oder application `Presence.ReadWrite.All
 | Datei | Zweck |
 | --- | --- |
 | `entra_app_setup.md` | App Registration in Entra ID (beide Auth-Wege) |
+| `setup_presenceguard.sh` | **Interaktiver Setup-Wizard** – führt durch die komplette Einrichtung |
 | `token_setup.sh` | Nur Weg A (delegiert): einmaliger Token-Grab via Authorization Code + PKCE → Refresh Token |
 | `token_refresh.sh` | Erneuert das Access Token (erkennt Refresh-Token- vs. Client-Credentials-Modus automatisch) |
 | `secrets.yaml` | Vorlage mit Platzhaltern für `/config/secrets.yaml` |
@@ -65,7 +66,30 @@ Auth-Weg delegiert `Presence.ReadWrite` oder application `Presence.ReadWrite.All
 
 ---
 
-## Setup end-to-end
+## Schnellstart per Wizard (empfohlen)
+
+Statt der manuellen Schritte unten kannst du den interaktiven Assistenten nutzen.
+Lege zuerst die App Registration an ([`entra_app_setup.md`](entra_app_setup.md)),
+dann:
+
+```bash
+cd presenceguard
+./setup_presenceguard.sh
+```
+
+Der Wizard fragt `client_id` / `tenant_id` / `user_id` ab, lässt dich den
+Auth-Weg wählen, holt bei Bedarf den Refresh Token, schreibt `secrets.yaml`
+(mit Backup), kopiert die Dateien nach `<config>/presenceguard/`, zeigt den
+`configuration.yaml`-Block und testet auf Wunsch den Token-Abruf. Danach nur
+noch HA neu starten.
+
+> Am einfachsten direkt auf dem HA-Host ausführen (Zugriff auf `/config`).
+> Für den delegierten Weg (Browser-Login) kannst du den Token-Schritt auch
+> lokal erledigen und den Wert später einfügen.
+
+---
+
+## Setup end-to-end (manuell)
 
 ### 1. Entra ID App Registration & Auth-Weg wählen
 Folge [`entra_app_setup.md`](entra_app_setup.md) und entscheide dich für einen
