@@ -11,6 +11,19 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import PresenceCoordinator
 
+# Status-dependent icon per Graph availability.
+PRESENCE_ICONS = {
+    "Available": "mdi:check-circle",
+    "AvailableIdle": "mdi:check-circle-outline",
+    "Busy": "mdi:minus-circle",
+    "BusyIdle": "mdi:minus-circle-outline",
+    "DoNotDisturb": "mdi:cancel",
+    "Away": "mdi:clock-outline",
+    "BeRightBack": "mdi:clock-outline",
+    "Offline": "mdi:circle-outline",
+    "PresenceUnknown": "mdi:help-circle-outline",
+}
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -28,7 +41,6 @@ class PresenceGuardPresenceSensor(
 
     _attr_has_entity_name = True
     _attr_name = "Presence"
-    _attr_icon = "mdi:microsoft-teams"
 
     def __init__(self, coordinator: PresenceCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -47,6 +59,10 @@ class PresenceGuardPresenceSensor(
     def native_value(self) -> str | None:
         # Graph availability, e.g. Available / Busy / Away / DoNotDisturb / Offline.
         return (self.coordinator.data or {}).get("availability")
+
+    @property
+    def icon(self) -> str:
+        return PRESENCE_ICONS.get(self.native_value, "mdi:microsoft-teams")
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:
