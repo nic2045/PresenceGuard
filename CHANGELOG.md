@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/nic2045/PresenceGuard/compare/v0.3.3...v0.3.4) (2026-05-28)
+
+
+### Features
+
+* presence sensor entity (current Teams status) ([#27](https://github.com/nic2045/PresenceGuard/issues/27)) ([1560450](https://github.com/nic2045/PresenceGuard/commit/1560450e1ecfdd18218b34b824d79594fa631df6))
+
 ## [0.3.3](https://github.com/nic2045/PresenceGuard/compare/v0.3.2...v0.3.3) (2026-05-28)
 
 
