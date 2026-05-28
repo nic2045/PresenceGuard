@@ -58,6 +58,7 @@ das wieder auf. Beide brauchen die delegierte Berechtigung `Presence.ReadWrite`
 | `command_line_presenceguard.yaml` | Token-Sensor (umgeht das 255-Zeichen-State-Limit) |
 | `template_presenceguard.yaml` | **Status-Sensor** `binary_sensor.presenceguard_token` – zeigt in der UI, ob Token-Daten da sind |
 | `shell_commands.yaml` | Aufruf von `token_refresh.sh` |
+| `scripts_presenceguard.yaml` | Skript **Token erneuern** (Button-/Assist-fähig) |
 | `automations_presenceguard.yaml` | Die 4 fest verdrahteten Automationen (Klassik) |
 | `blueprints/automation/presenceguard/presence_schedule.yaml` | **Blueprint** mit UI-Konfiguration (Zeitplan-Helper + Status-Dropdown) |
 | `schedule_helper_presenceguard.yaml` | Beispiel-Zeitplan-Helper (mehrere Von/Bis-Fenster) |
@@ -146,6 +147,7 @@ shell_command: !include presenceguard/shell_commands.yaml
 command_line: !include presenceguard/command_line_presenceguard.yaml
 template: !include presenceguard/template_presenceguard.yaml
 automation presenceguard: !include presenceguard/automations_presenceguard.yaml
+script: !include presenceguard/scripts_presenceguard.yaml   # optional: Button/Assist „Token erneuern"
 ```
 > Lege die YAML-Dateien dazu nach `/config/presenceguard/`.
 > Falls du `command_line:` oder `template:` bereits anderweitig nutzt, führe die
@@ -200,6 +202,33 @@ Auf ein Dashboard ziehst du den Sensor als **Entität**- oder
 > Hinweis: `sensor.presence_token` existiert dank des robusten `command_line`-
 > Kommandos auch **vor** dem ersten Token-Refresh (dann ohne Attribute, der
 > Status-Sensor steht auf *Getrennt*). Er wird also nicht „unavailable".
+
+---
+
+## Token erneuern per Button / Assist
+
+`scripts_presenceguard.yaml` liefert das Skript
+**`script.presenceguard_token_erneuern`** (ruft `token_refresh.sh` + aktualisiert
+den Sensor). Einbinden via `script: !include …` (siehe Schritt 5).
+
+**Als Button aufs Dashboard:**
+```yaml
+type: button
+name: Teams-Token erneuern
+icon: mdi:account-clock
+tap_action:
+  action: perform-action
+  perform_action: script.presenceguard_token_erneuern
+```
+
+**Per Sprache (Assist):** Einstellungen → **Sprachassistenten** → *Assist* →
+**Entitäten freigeben** → `script.presenceguard_token_erneuern` hinzufügen.
+Danach genügt z. B. „**PresenceGuard Token erneuern**" bzw. „Führe … aus".
+
+> ⚠️ Das frischt nur den Access Token auf und wirkt nur, **solange der Refresh
+> Token gültig** ist. Eine abgelaufene Anmeldung (z. B. Conditional-Access
+> „Sign-in frequency") kann weder Button noch Assist neu anmelden – dafür
+> `token_setup.sh` ausführen.
 
 ---
 

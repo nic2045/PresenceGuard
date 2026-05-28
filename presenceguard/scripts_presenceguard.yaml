@@ -1,0 +1,29 @@
+# PresenceGuard – Skripte
+#
+# Einbinden in configuration.yaml:
+#   script: !include presenceguard/scripts_presenceguard.yaml
+#
+# Hast du bereits einen script:-Eintrag (z. B. script: !include scripts.yaml),
+# darf script: NICHT doppelt stehen. Dann den Inhalt unten in deine bestehende
+# Skript-Datei übernehmen (script: ist ein Mapping aus Skript-IDs).
+#
+# Ergebnis: Entität script.presenceguard_token_erneuern – als Button aufs
+# Dashboard legbar UND für Assist freigebbar (per Sprache ausführbar).
+#
+# Hinweis: Das Skript frischt nur den Access Token auf (token_refresh.sh) und
+# hilft, solange der Refresh Token gültig ist. Eine abgelaufene Anmeldung
+# (z. B. Conditional-Access „Sign-in frequency") lässt sich damit NICHT neu
+# anmelden – dafür token_setup.sh ausführen.
+
+presenceguard_token_erneuern:
+  alias: "PresenceGuard Token erneuern"
+  icon: mdi:account-clock
+  description: >
+    Frischt den Microsoft-Graph-Access-Token auf (ruft token_refresh.sh) und
+    aktualisiert den Token-Sensor.
+  sequence:
+    - service: shell_command.refresh_presence_token
+    - delay: "00:00:03"
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.presence_token
