@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/nic2045/PresenceGuard/compare/v0.2.5...v0.2.6) (2026-05-28)
+
+
+### Features
+
+* interaktiver Setup-Wizard (setup_presenceguard.sh) ([#11](https://github.com/nic2045/PresenceGuard/issues/11)) ([88b8e6a](https://github.com/nic2045/PresenceGuard/commit/88b8e6a59f7b771dbcbf02a7c7e1ef2fb2fb43f1))
+
 ## [0.2.5](https://github.com/nic2045/PresenceGuard/compare/v0.2.4...v0.2.5) (2026-05-28)
 
 
