@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/nic2045/PresenceGuard/compare/v0.3.2...v0.3.3) (2026-05-28)
+
+
+### Features
+
+* brand icon assets + service icons (icons.json) ([#25](https://github.com/nic2045/PresenceGuard/issues/25)) ([7c7f1fe](https://github.com/nic2045/PresenceGuard/commit/7c7f1fe083fa4bb904a22bf51dc7a78d6d36e0ce))
+
 ## [0.3.2](https://github.com/nic2045/PresenceGuard/compare/v0.3.1...v0.3.2) (2026-05-28)
 
 
