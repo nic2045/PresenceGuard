@@ -28,8 +28,8 @@ oder Python-Daemon. Nur `bash`, `curl` und natives HA-YAML.
 
 ### 🔐 Token-Handling
 - **Automatischer Refresh** — Access Token wird alle 30 Min und beim HA-Start
-  erneuert; `token_refresh.sh` wählt automatisch delegiert (Refresh Token) oder
-  App-only (Client Credentials)
+  über den Refresh Token erneuert (delegiert, `Presence.ReadWrite`); die user_id
+  wird automatisch ermittelt
 - **Token-Sensor** — umgeht das 255-Zeichen-State-Limit für lange Tokens
 - **Status-Sensor** — `binary_sensor.presenceguard_token` zeigt in der UI, ob
   gültige Token-Daten vorliegen
@@ -49,9 +49,8 @@ Microsoft-Doku-Begründung: [`presenceguard/README.md`](presenceguard/README.md#
 ## Requirements
 
 ### Entra ID App Registration (erforderlich)
-Zwei Wege: **A) delegiert** `Presence.ReadWrite` (kein Admin, nur dein Konto)
-oder **B) App-only** `Presence.ReadWrite.All` + Admin-Consent + Client Secret.
-Schritt für Schritt:
+Delegierte Berechtigung **`Presence.ReadWrite`** (kein Admin nötig, steuert nur
+dein eigenes Konto), Public-Client-Flows aktiviert. Schritt für Schritt:
 [`presenceguard/entra_app_setup.md`](presenceguard/entra_app_setup.md).
 
 ### Zeitplan-Helper (für Blueprint, empfohlen)
@@ -106,7 +105,7 @@ end-to-end dokumentiert.
 | `presenceguard/automations_presenceguard.yaml` | Klassische Automationen |
 | `presenceguard/entra_app_setup.md` | Entra ID App Registration (beide Wege) |
 | `presenceguard/setup_presenceguard.sh` | Interaktiver Setup-Wizard |
-| `presenceguard/token_setup.sh` / `token_refresh.sh` | Token-Scripte (delegiert + App-only) |
+| `presenceguard/token_setup.sh` / `token_refresh.sh` | Token-Scripte (delegiert, Refresh Token) |
 
 Entwicklungshinweise: [`CLAUDE.md`](CLAUDE.md).
 
