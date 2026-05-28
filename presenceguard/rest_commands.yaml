@@ -31,3 +31,16 @@ clear_teams_presence:
     Authorization: "Bearer {{ state_attr('sensor.presence_token', 'access_token') }}"
     Content-Type: "application/json"
   payload: '{}'
+
+# Parametrisierter Command für das Blueprint (presence_schedule.yaml).
+# availability/activity werden vom Blueprint aus dem Dropdown gesetzt.
+# Gültige Kombinationen (Microsoft Graph setUserPreferredPresence):
+#   Available/Available, Busy/Busy, DoNotDisturb/DoNotDisturb,
+#   BeRightBack/BeRightBack, Away/Away, Offline/OffWork
+set_teams_presence:
+  url: "https://graph.microsoft.com/v1.0/users/{{ state_attr('sensor.presence_token', 'user_id') }}/presence/setUserPreferredPresence"
+  method: POST
+  headers:
+    Authorization: "Bearer {{ state_attr('sensor.presence_token', 'access_token') }}"
+    Content-Type: "application/json"
+  payload: '{"availability": "{{ availability }}", "activity": "{{ activity }}"}'
