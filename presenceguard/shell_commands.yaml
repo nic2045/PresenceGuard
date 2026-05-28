@@ -1,0 +1,10 @@
+# PresenceGuard – Shell Commands
+#
+# Einbinden in configuration.yaml:
+#   shell_command: !include presenceguard/shell_commands.yaml
+#
+# Hinweis: shell_command führt im Home-Assistant-Core-Container aus. Lege die
+# Scripte unter /config/presenceguard/ ab und mache sie ausführbar
+# (chmod +x). bash und curl sind im Core-Container vorhanden.
+
+refresh_presence_token: "bash /config/presenceguard/token_refresh.sh"

@@ -1,0 +1,20 @@
+# PresenceGuard – command_line Sensor, der den Access Token bereitstellt.
+#
+# Einbinden in configuration.yaml:
+#   command_line: !include presenceguard/command_line_presenceguard.yaml
+#
+# Warum dieser Sensor? Home-Assistant-States sind auf 255 Zeichen begrenzt –
+# ein Graph-Access-Token (JWT) ist deutlich länger. Lange Werte sind nur als
+# ATTRIBUTE erlaubt. Daher liest dieser Sensor /config/presence_token.json und
+# legt access_token + user_id als Attribute ab; der State ist nur der kurze
+# Zeitstempel. rest_commands.yaml greift via state_attr(...) darauf zu.
+
+- sensor:
+    name: presence_token
+    unique_id: presenceguard_access_token
+    command: "cat /config/presence_token.json"
+    value_template: "{{ value_json.ts }}"
+    json_attributes:
+      - access_token
+      - user_id
+    scan_interval: 60

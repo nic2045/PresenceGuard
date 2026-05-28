@@ -1,0 +1,33 @@
+# PresenceGuard – REST Commands für Microsoft Graph
+#
+# Einbinden in configuration.yaml:
+#   rest_command: !include presenceguard/rest_commands.yaml
+#
+# WICHTIG – API-Wahl (siehe README, Abschnitt "Warum setUserPreferredPresence"):
+# Für ein verlässliches "Offline / Abwesend"-Erscheinungsbild wird
+# setUserPreferredPresence verwendet, NICHT setPresence. Begründung laut
+# Microsoft-Doku:
+#   * setPresence unterstützt "Offline" gar nicht als gültige Kombination und
+#     die App-Session würde von einem laufenden Teams-Client ueberstimmt.
+#   * setUserPreferredPresence (Offline/OffWork) ist der "bevorzugte Status"
+#     und ueberschreibt den tatsächlichen Teams-Status -> erscheint Offline.
+#   * clearUserPreferredPresence setzt wieder auf den echten Status zurück.
+#
+# access_token und user_id liefert sensor.presence_token (siehe
+# command_line_presenceguard.yaml), das token_refresh.sh aktuell hält.
+
+set_teams_offline:
+  url: "https://graph.microsoft.com/v1.0/users/{{ state_attr('sensor.presence_token', 'user_id') }}/presence/setUserPreferredPresence"
+  method: POST
+  headers:
+    Authorization: "Bearer {{ state_attr('sensor.presence_token', 'access_token') }}"
+    Content-Type: "application/json"
+  payload: '{"availability": "Offline", "activity": "OffWork"}'
+
+clear_teams_presence:
+  url: "https://graph.microsoft.com/v1.0/users/{{ state_attr('sensor.presence_token', 'user_id') }}/presence/clearUserPreferredPresence"
+  method: POST
+  headers:
+    Authorization: "Bearer {{ state_attr('sensor.presence_token', 'access_token') }}"
+    Content-Type: "application/json"
+  payload: '{}'
