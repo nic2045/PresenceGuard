@@ -1,0 +1,128 @@
+blueprint:
+  name: "PresenceGuard – Teams Presence per Zeitplan (Integration)"
+  description: >
+    Setzt den bevorzugten Microsoft-Teams-Status anhand eines **Zeitplan-Helpers**
+    (schedule) über die **PresenceGuard-Integration** – ohne REST/Shell/Token-Sensor.
+
+
+    Während ein Zeitfenster aktiv ist, wird der gewählte Status gesetzt; am Ende
+    wird er aufgehoben oder ein anderer Status gesetzt. Optional wird zusätzlich
+    eine Teams-Statusmeldung (Notiz) gesetzt und am Fensterende wieder geleert.
+
+
+    Voraussetzung: Die **PresenceGuard-Integration** ist eingerichtet (stellt die
+    Services presenceguard.set_presence / clear_presence / set_status_message
+    bereit). Token-Handling übernimmt die Integration automatisch.
+  domain: automation
+  author: PresenceGuard
+  input:
+    schedule_helper:
+      name: "Zeitplan (Helper)"
+      description: >
+        Schedule-Helper, der festlegt, WANN der Status gesetzt wird
+        (Einstellungen → Geräte & Dienste → Helfer → Zeitplan).
+      selector:
+        entity:
+          filter:
+            - domain: schedule
+
+    presence_status:
+      name: "Status während des Zeitplans"
+      description: "Welcher bevorzugte Status gesetzt wird, solange ein Zeitfenster aktiv ist."
+      default: "Offline|OffWork"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Offline (erscheint abgemeldet)"
+              value: "Offline|OffWork"
+            - label: "Abwesend"
+              value: "Away|Away"
+            - label: "Bin gleich zurück"
+              value: "BeRightBack|BeRightBack"
+            - label: "Beschäftigt"
+              value: "Busy|Busy"
+            - label: "Nicht stören"
+              value: "DoNotDisturb|DoNotDisturb"
+
+    end_action:
+      name: "Aktion bei Zeitplan-Ende"
+      description: >
+        „Aufheben" gibt den echten Teams-Status wieder frei (empfohlen).
+        Alternativ kann ein fester Status gesetzt werden.
+      default: "clear"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Bevorzugten Status aufheben (echter Status)"
+              value: "clear"
+            - label: "Verfügbar setzen"
+              value: "Available|Available"
+            - label: "Abwesend setzen"
+              value: "Away|Away"
+
+    status_message:
+      name: "Statusmeldung (optional)"
+      description: >
+        Optionaler Notiz-Text, der während des Zeitfensters gesetzt wird
+        (z. B. „Außerhalb der Arbeitszeit"). Leer lassen = keine Meldung.
+        Am Fensterende wird die Meldung wieder geleert.
+      default: ""
+      selector:
+        text:
+
+mode: queued
+max_exceeded: silent
+
+variables:
+  presence_status: !input presence_status
+  end_action: !input end_action
+  status_message: !input status_message
+
+trigger:
+  - platform: state
+    entity_id: !input schedule_helper
+    to: "on"
+    id: window_start
+  - platform: state
+    entity_id: !input schedule_helper
+    to: "off"
+    id: window_end
+
+action:
+  - choose:
+      # Zeitfenster beginnt -> gewählten Status (und optional Notiz) setzen.
+      - conditions:
+          - condition: trigger
+            id: window_start
+        sequence:
+          - service: presenceguard.set_presence
+            data:
+              availability: "{{ presence_status.split('|')[0] }}"
+              activity: "{{ presence_status.split('|')[1] }}"
+          - if: "{{ status_message | trim | length > 0 }}"
+            then:
+              - service: presenceguard.set_status_message
+                data:
+                  message: "{{ status_message }}"
+
+      # Zeitfenster endet -> aufheben oder festen Status setzen, Notiz leeren.
+      - conditions:
+          - condition: trigger
+            id: window_end
+        sequence:
+          - choose:
+              - conditions: "{{ end_action == 'clear' }}"
+                sequence:
+                  - service: presenceguard.clear_presence
+            default:
+              - service: presenceguard.set_presence
+                data:
+                  availability: "{{ end_action.split('|')[0] }}"
+                  activity: "{{ end_action.split('|')[1] }}"
+          - if: "{{ status_message | trim | length > 0 }}"
+            then:
+              - service: presenceguard.set_status_message
+                data:
+                  message: ""
