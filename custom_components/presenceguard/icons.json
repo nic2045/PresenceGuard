@@ -2,6 +2,7 @@
   "services": {
     "set_offline": { "service": "mdi:account-off" },
     "clear_presence": { "service": "mdi:account-check" },
-    "set_presence": { "service": "mdi:account-clock" }
+    "set_presence": { "service": "mdi:account-clock" },
+    "set_status_message": { "service": "mdi:message-text-outline" }
   }
 }

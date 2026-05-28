@@ -2,7 +2,9 @@
 
 ![HA Version](https://img.shields.io/badge/Home%20Assistant-2024.6%2B-blue?logo=homeassistant)
 [![HA YAML Validation](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml)
+[![Validate integration (hassfest + HACS)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate-integration.yaml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate-integration.yaml)
 [![Secret scan: gitleaks](https://github.com/nic2045/PresenceGuard/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/gitleaks.yml)
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -10,9 +12,22 @@ Automatically set your **Microsoft Teams presence status** via **Home
 Assistant** + **Microsoft Graph API** – without Premium, Power Automate, Node.js
 or a Python daemon. Just `bash`, `curl` and native HA YAML.
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fnic2045%2FPresenceGuard%2Fmain%2Fpresenceguard%2Fblueprints%2Fautomation%2Fpresenceguard%2Fpresence_schedule.yaml)
+[![Open your Home Assistant instance and open the PresenceGuard repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nic2045&repository=PresenceGuard&category=integration)
 
 ## Features
+
+### 🧩 Custom integration (UI-native)
+- **OAuth login in the HA UI** — sign in to Microsoft directly in Home
+  Assistant (no `token_setup.sh`, no `secrets.yaml`)
+- **Automatic reauth in Repairs** — when the sign-in expires (e.g. Conditional
+  Access), HA shows a reauth card to sign in again
+- **Presence sensor** — `sensor.presenceguard_presence` shows the live Teams
+  availability (with a status-dependent icon); `binary_sensor.presenceguard_token`
+  shows the connection
+- **Services** — `presenceguard.set_offline`, `presenceguard.clear_presence`,
+  `presenceguard.set_presence`, and `presenceguard.set_status_message`
+  (free-text note with optional expiry)
+- **HACS-compatible** — installable as a custom repository
 
 ### 🕒 Time control
 - **Schedule helper (`schedule`)** — any number of from/to windows per
@@ -105,6 +120,7 @@ configuration.yaml) is documented end-to-end in **[`presenceguard/README.md`](pr
 
 | File | Purpose |
 | --- | --- |
+| `custom_components/presenceguard/` | **Custom integration** (OAuth UI login, reauth in Repairs, presence sensor, services) – see its [README](custom_components/presenceguard/README.md) |
 | `presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml` | Blueprint with UI configuration |
 | `presenceguard/schedule_helper_presenceguard.yaml` | Example schedule helper |
 | `presenceguard/rest_commands.yaml` | Graph REST Commands |
