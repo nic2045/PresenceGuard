@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/nic2045/PresenceGuard/compare/v0.2.0...v0.2.1) (2026-05-28)
+
+
+### Features
+
+* PresenceGuard – auto-set Teams presence via Home Assistant + Graph ([#1](https://github.com/nic2045/PresenceGuard/issues/1)) ([71237dd](https://github.com/nic2045/PresenceGuard/commit/71237dd209c08e9721853de31bb03ad3032640cf))
+
 ## [0.2.0](https://github.com/nic2045/pyshell-starter/compare/v0.1.1...v0.2.0) (2026-05-17)
 
 
