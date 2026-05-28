@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/nic2045/PresenceGuard/compare/v0.2.4...v0.2.5) (2026-05-28)
+
+
+### Features
+
+* Blueprint-Version anzeigen + an release-please koppeln ([#9](https://github.com/nic2045/PresenceGuard/issues/9)) ([6728100](https://github.com/nic2045/PresenceGuard/commit/672810051d1b52f2ce07d7a95b41591fa9ee264e))
+
 ## [0.2.4](https://github.com/nic2045/PresenceGuard/compare/v0.2.3...v0.2.4) (2026-05-28)
 
 
