@@ -1,4 +1,4 @@
-"""Microsoft-Graph-Client für PresenceGuard (delegiert, /me)."""
+"""Microsoft Graph client for PresenceGuard (delegated, /me)."""
 
 from __future__ import annotations
 
@@ -10,11 +10,11 @@ from .const import GRAPH_BASE
 
 
 class AuthError(Exception):
-    """Token ungültig/abgelaufen – Reauth nötig."""
+    """Token invalid/expired – reauth needed."""
 
 
 class GraphApi:
-    """Dünner Wrapper um die Graph-Presence-Endpunkte des angemeldeten Nutzers."""
+    """Thin wrapper around the Graph presence endpoints of the signed-in user."""
 
     def __init__(self, websession: ClientSession, oauth_session: OAuth2Session) -> None:
         self._web = websession
@@ -43,7 +43,7 @@ class GraphApi:
             return None
 
     async def async_get_me(self) -> dict:
-        """Profil des angemeldeten Nutzers (für Titel/Unique-ID)."""
+        """Profile of the signed-in user (for title/unique ID)."""
         return await self._request("GET", "/me")
 
     async def async_get_presence(self) -> dict:

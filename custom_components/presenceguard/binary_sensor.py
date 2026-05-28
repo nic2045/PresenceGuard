@@ -1,4 +1,4 @@
-"""Binary Sensor: Verbindungs-/Token-Status der PresenceGuard-Integration."""
+"""Binary sensor: connection/token status of the PresenceGuard integration."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ async def async_setup_entry(
 class PresenceGuardTokenSensor(
     CoordinatorEntity[PresenceCoordinator], BinarySensorEntity
 ):
-    """An, solange Token gültig ist und Graph antwortet."""
+    """On as long as the token is valid and Graph responds."""
 
     _attr_has_entity_name = True
     _attr_name = "Token"
