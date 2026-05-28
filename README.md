@@ -1,136 +1,138 @@
 # PresenceGuard
 
 ![HA Version](https://img.shields.io/badge/Home%20Assistant-2024.6%2B-blue?logo=homeassistant)
-[![HA YAML Validation](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml)
 [![Validate integration (hassfest + HACS)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate-integration.yaml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate-integration.yaml)
+[![HA YAML Validation](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml)
 [![Secret scan: gitleaks](https://github.com/nic2045/PresenceGuard/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/gitleaks.yml)
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Automatically set your **Microsoft Teams presence status** via **Home
-Assistant** + **Microsoft Graph API** – without Premium, Power Automate, Node.js
-or a Python daemon. Just `bash`, `curl` and native HA YAML.
+**Own your Microsoft Teams presence — from Home Assistant.**
+
+PresenceGuard is a Home Assistant integration that lets you **read and set your
+Microsoft Teams status** with native automations: appear **Offline** after
+hours, flip to **Busy** during focus time, post a **status message** like
+"In a meeting until 3 pm" — all driven by your schedules, scenes and triggers.
+
+No Premium add-ons, no Power Automate, no scripts to babysit. You sign in once
+**inside Home Assistant**, and PresenceGuard keeps the token fresh for you.
 
 [![Open your Home Assistant instance and open the PresenceGuard repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nic2045&repository=PresenceGuard&category=integration)
 
-## Features
+---
 
-### 🧩 Custom integration (UI-native)
-- **OAuth login in the HA UI** — sign in to Microsoft directly in Home
-  Assistant (no `token_setup.sh`, no `secrets.yaml`)
-- **Automatic reauth in Repairs** — when the sign-in expires (e.g. Conditional
-  Access), HA shows a reauth card to sign in again
-- **Presence sensor** — `sensor.presenceguard_presence` shows the live Teams
-  availability (with a status-dependent icon); `binary_sensor.presenceguard_token`
-  shows the connection
-- **Services** — `presenceguard.set_offline`, `presenceguard.clear_presence`,
-  `presenceguard.set_presence`, and `presenceguard.set_status_message`
-  (free-text note with optional expiry)
-- **HACS-compatible** — installable as a custom repository
+## Why PresenceGuard?
 
-### 🕒 Time control
-- **Schedule helper (`schedule`)** — any number of from/to windows per
-  weekday, fully configurable in the HA UI
-- **Classic automations** — alternatively fixed times (Mon–Fri 17:00 Offline,
-  09:00 reset, Sat 00:00) without a helper
-
-### 🎚️ Set the status yourself
-- **Status dropdown** — Offline / Away / Be right back / Busy /
-  Do not disturb
-- **Action at window end** — clear the preferred status (real status)
-  or set a fixed status
-
-### 🔐 Token handling
-- **Automatic refresh** — the access token is renewed every 30 min and at HA
-  startup via the refresh token (delegated, `Presence.ReadWrite`); the user_id
-  is determined automatically
-- **Token sensor** — works around the 255-character state limit for long tokens
-- **Status sensor** — `binary_sensor.presenceguard_token` shows in the UI whether
-  valid token data is present
+- 🔐 **Sign in once, in the UI.** OAuth2 login with Microsoft directly in Home
+  Assistant — no `secrets.yaml`, no shell scripts, no manual token copying.
+- ♻️ **Stays logged in, fixes itself.** Tokens refresh automatically. If a
+  Conditional-Access policy ever forces a re-login, HA shows a **one-click
+  reauth card in Repairs** — no terminal required.
+- 🟢 **Live status as an entity.** `sensor.presenceguard_presence` shows your
+  current Teams availability with a status-aware icon — perfect for dashboards
+  and automations.
+- 🎛️ **Simple services.** Set Offline, set any status, clear it, or post a
+  status note — straight from automations and scripts.
+- 🔒 **Least privilege.** Delegated `Presence.ReadWrite` — PresenceGuard only
+  ever touches **your own** account. No tenant-wide permissions, no admin
+  consent required.
+- 📦 **HACS-ready.** Install and update like any other community integration.
 
 ---
 
-## Why `setUserPreferredPresence` instead of `setPresence`?
+## What you can do
 
-`setPresence` does not reliably support "Offline" and is overridden by a
-running Teams client. `setUserPreferredPresence` (`Offline`/`OffWork`)
-sets the **preferred** status, which overrides the actual Teams status;
-`clearUserPreferredPresence` reverts that again. Details and the
-Microsoft documentation rationale: [`presenceguard/README.md`](presenceguard/README.md#why-setuserpreferredpresence-instead-of-setpresence).
+| You want to… | Use |
+| --- | --- |
+| Appear **Offline** after work | `presenceguard.set_offline` |
+| Set **Busy / Do not disturb / Away / …** | `presenceguard.set_presence` |
+| Hand control **back to Teams** | `presenceguard.clear_presence` |
+| Post a **status message** (with optional expiry) | `presenceguard.set_status_message` |
+| Show your **current status** on a dashboard | `sensor.presenceguard_presence` |
+
+### Example automation
+
+```yaml
+alias: PresenceGuard – Teams offline on schedule
+mode: queued
+triggers:
+  - trigger: state
+    entity_id: schedule.work_hours
+    to: "off"          # outside working hours
+    id: off_hours
+  - trigger: state
+    entity_id: schedule.work_hours
+    to: "on"
+    id: work
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: off_hours
+        sequence:
+          - action: presenceguard.set_offline
+          - action: presenceguard.set_status_message
+            data:
+              message: "Outside working hours"
+    default:
+      - action: presenceguard.clear_presence
+```
 
 ---
 
-## Requirements
+## Install (HACS — recommended)
 
-### Entra ID App Registration (required)
-Delegated permission **`Presence.ReadWrite`** (no admin needed, controls only
-your own account), public client flows enabled. Step by step:
-[`presenceguard/entra_app_setup.md`](presenceguard/entra_app_setup.md).
+1. **Add the repository to HACS** (badge above), or HACS → ⋮ → *Custom
+   repositories* → `nic2045/PresenceGuard`, type **Integration**. Install and
+   restart Home Assistant.
+2. **Create an Entra ID app registration** (one-time) — see
+   [`presenceguard/entra_app_setup.md`](presenceguard/entra_app_setup.md).
+   For the integration use a **Web** redirect URI
+   `https://my.home-assistant.io/redirect/oauth` and create a **client secret**.
+   Permission: delegated **`Presence.ReadWrite`**.
+3. **Settings → Devices & Services → Add Integration → PresenceGuard.** Enter
+   your **Client ID** and **Client Secret**, then sign in with Microsoft.
 
-### Schedule helper (for the blueprint, recommended)
-**Via UI:** Settings → Devices & Services → Helpers → *+ Helper* → **Schedule**.
-Drag the time windows into place — multiple windows per day are possible.
-
-**Via YAML:** [`presenceguard/schedule_helper_presenceguard.yaml`](presenceguard/schedule_helper_presenceguard.yaml).
+Full integration details:
+**[`custom_components/presenceguard/README.md`](custom_components/presenceguard/README.md)**.
 
 ---
 
-## Install
+## How it works
 
-There are **two ways** – use one of them:
+PresenceGuard uses Microsoft Graph's **`setUserPreferredPresence`** rather than
+`setPresence`. The preferred status reliably **overrides** the live Teams
+status (including "Offline", which `setPresence` doesn't support) and survives a
+running Teams client; `clearUserPreferredPresence` hands control back. Details
+and the Microsoft rationale:
+[`presenceguard/README.md`](presenceguard/README.md#why-setuserpreferredpresence-instead-of-setpresence).
 
-### A) Custom Integration (UI-native, recommended)
-Sign in **directly in Home Assistant** (OAuth2), automatic token renewal
-and a **reauth card in Repairs** when the sign-in expires – without
-`token_setup.sh`/`secrets.yaml`. Via **HACS** (custom repository, type
-*Integration*) or by copying `custom_components/presenceguard/` to `<config>/`.
-Details: **[`custom_components/presenceguard/README.md`](custom_components/presenceguard/README.md)**.
+---
 
-### B) Classic (YAML + bash)
-**Import the blueprint** (My-HA badge above) or manually:
-Settings → Automations & Scenes → Blueprints → *Import blueprint* →
-paste the URL:
+## Prefer pure YAML? (classic mode)
+
+PresenceGuard also ships a **no-Python**, bash + YAML setup (blueprint, REST
+commands, token scripts) — handy if you don't want a custom integration. It is
+fully documented and still maintained:
+**[`presenceguard/README.md`](presenceguard/README.md)**.
+
+Import the classic blueprint directly:
 ```
 https://raw.githubusercontent.com/nic2045/PresenceGuard/main/presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml
 ```
 
-The full setup (app registration, token, REST/shell commands, sensor,
-configuration.yaml) is documented end-to-end in **[`presenceguard/README.md`](presenceguard/README.md)**.
-
----
-
-## Configuration via UI (blueprint)
-
-| Input | Meaning |
-| --- | --- |
-| **Schedule (helper)** | Schedule helper – defines *from/to* (multiple windows) |
-| **Status during the schedule** | Dropdown: Offline / Away / Be right back / Busy / Do not disturb |
-| **Action at schedule end** | Clear the status (real status) or set a fixed status |
-| **Token sensor** | Default `sensor.presence_token` |
-| **Token refresh shell command** | Default `refresh_presence_token` |
-
-> **Classic or blueprint?** Use **either** the fixed automations from
-> `presenceguard/automations_presenceguard.yaml` **or** the blueprint automation
-> – not both in parallel.
+> Use **one** approach per account — the integration **or** the classic YAML
+> setup, not both at once.
 
 ---
 
 ## Files
 
-| File | Purpose |
+| Path | Purpose |
 | --- | --- |
-| `custom_components/presenceguard/` | **Custom integration** (OAuth UI login, reauth in Repairs, presence sensor, services) – see its [README](custom_components/presenceguard/README.md) |
-| `presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml` | Blueprint with UI configuration |
-| `presenceguard/schedule_helper_presenceguard.yaml` | Example schedule helper |
-| `presenceguard/rest_commands.yaml` | Graph REST Commands |
-| `presenceguard/command_line_presenceguard.yaml` | Token sensor |
-| `presenceguard/template_presenceguard.yaml` | Status sensor (UI: token data present?) |
-| `presenceguard/shell_commands.yaml` | Token refresh call |
-| `presenceguard/automations_presenceguard.yaml` | Classic automations |
-| `presenceguard/entra_app_setup.md` | Entra ID App Registration (both ways) |
-| `presenceguard/setup_presenceguard.sh` | Interactive setup wizard |
-| `presenceguard/token_setup.sh` / `token_refresh.sh` | Token scripts (delegated, refresh token) |
+| `custom_components/presenceguard/` | **The integration** (OAuth UI login, reauth in Repairs, presence sensor, services) |
+| `presenceguard/` | Classic YAML/bash setup (blueprint, REST/shell commands, token scripts) |
+| `brands/` | Icon assets for submission to `home-assistant/brands` |
 
 Development notes: [`CLAUDE.md`](CLAUDE.md).
 
