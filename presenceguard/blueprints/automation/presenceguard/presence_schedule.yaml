@@ -12,9 +12,15 @@ blueprint:
     aufgehoben (echter Teams-Status) oder ein anderer Status gesetzt.
 
 
+    Optional: warnt zusätzlich (UI-Meldung mit Erneuern-Link + optionaler Push),
+    wenn der Token erneuert werden muss – nützlich bei Conditional-Access
+    „Sign-in frequency". Leer lassen der Benachrichtigung deaktiviert das.
+
+
     Voraussetzung: rest_commands.yaml (set_teams_presence /
     clear_teams_presence), shell_commands.yaml und der Token-Sensor sind
-    eingebunden (siehe README).
+    eingebunden (siehe README). Für die Warnung zusätzlich
+    template_presenceguard.yaml (binary_sensor.presenceguard_token).
   domain: automation
   author: PresenceGuard
   input:
@@ -82,6 +88,64 @@ blueprint:
       selector:
         text:
 
+    # --- Optionale Token-Warnung ---------------------------------------------
+    token_status_sensor:
+      name: "Token-Status-Sensor (für Warnung)"
+      description: >
+        Sensor mit Attribut token_age_minutes (Standard:
+        binary_sensor.presenceguard_token). Nur für die optionale Warnung unten.
+      default: binary_sensor.presenceguard_token
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+
+    warn_max_age_minutes:
+      name: "Warnen ab Token-Alter (Minuten)"
+      description: >
+        Der Refresh läuft alle ~30 Min. Über diesem Alter hängt der Refresh
+        (z. B. Refresh Token abgelaufen). Empfehlung: 90.
+      default: 90
+      selector:
+        number:
+          min: 35
+          max: 1440
+          step: 5
+          unit_of_measurement: "min"
+          mode: box
+
+    warn_disconnect_minutes:
+      name: "Warnen bei Status Getrennt ab (Minuten)"
+      description: "Wie lange keine Token-Daten vorliegen müssen, bevor gewarnt wird."
+      default: 15
+      selector:
+        number:
+          min: 1
+          max: 240
+          step: 1
+          unit_of_measurement: "min"
+          mode: box
+
+    renew_url:
+      name: "Link zum Erneuern"
+      description: >
+        URL, die in der Warnmeldung als „Jetzt erneuern" verlinkt wird – z. B.
+        deine Anleitung/Notiz zum Ausführen von token_setup.sh. Standard zeigt
+        auf die Projekt-README.
+      default: "https://github.com/nic2045/PresenceGuard/blob/main/presenceguard/README.md#2-refresh-token-holen-einmalig-lokal"
+      selector:
+        text:
+
+    warn_action:
+      name: "Zusätzliche Benachrichtigung (optional)"
+      description: >
+        Optional zusätzlich zur UI-Meldung – z. B. ein Push via
+        notify.mobile_app_… (dort kannst du eine clickAction-URL mit dem
+        Erneuern-Link hinterlegen). Leer lassen = nur die UI-Meldung.
+      default: []
+      selector:
+        action: {}
+
 mode: queued
 max_exceeded: silent
 
@@ -90,6 +154,7 @@ variables:
   end_action: !input end_action
   token_sensor: !input token_sensor
   refresh_command: !input refresh_command
+  renew_url: !input renew_url
 
 trigger:
   - platform: state
@@ -100,39 +165,75 @@ trigger:
     entity_id: !input schedule_helper
     to: "off"
     id: window_end
+  # Optionale Token-Warnung: Token zu alt (Refresh hängt) ...
+  - platform: numeric_state
+    entity_id: !input token_status_sensor
+    attribute: token_age_minutes
+    above: !input warn_max_age_minutes
+    id: token_alert
+  # ... oder gar keine Token-Daten mehr ("Getrennt").
+  - platform: state
+    entity_id: !input token_status_sensor
+    to: "off"
+    for:
+      minutes: !input warn_disconnect_minutes
+    id: token_alert
 
 action:
-  # 1) Token frisch halten, bevor Graph aufgerufen wird.
-  - service: "shell_command.{{ refresh_command }}"
-  - delay: "00:00:03"
-  - service: homeassistant.update_entity
-    target:
-      entity_id: "{{ token_sensor }}"
-  - delay: "00:00:02"
-
-  # 2) Je nach Trigger Status setzen oder Fenster-Ende-Aktion ausführen.
   - choose:
-      # Zeitfenster beginnt -> gewählten Status setzen.
+      # A) Token-Warnung: UI-Meldung mit Erneuern-Link + optionaler Push,
+      #    KEIN Refresh / kein Presence-Aufruf.
       - conditions:
           - condition: trigger
-            id: window_start
+            id: token_alert
         sequence:
-          - service: rest_command.set_teams_presence
+          - service: persistent_notification.create
             data:
-              availability: "{{ presence_status.split('|')[0] }}"
-              activity: "{{ presence_status.split('|')[1] }}"
+              notification_id: presenceguard_token_alert
+              title: "PresenceGuard: Token erneuern"
+              message: >
+                Der Teams-Status kann evtl. nicht mehr gesetzt werden – der
+                Token muss erneuert werden (z. B. Refresh Token wegen
+                Conditional-Access abgelaufen).
 
-      # Zeitfenster endet -> aufheben oder festen Status setzen.
-      - conditions:
-          - condition: trigger
-            id: window_end
-        sequence:
-          - choose:
-              - conditions: "{{ end_action == 'clear' }}"
-                sequence:
-                  - service: rest_command.clear_teams_presence
-            default:
+
+                **[Jetzt erneuern]({{ renew_url }})**
+          # Optionale zusätzliche Benachrichtigung (z. B. Push); leer = nichts.
+          - sequence: !input warn_action
+
+    # B) Sonst (Zeitfenster-Start/-Ende): bisherige Presence-Logik.
+    default:
+      # 1) Token frisch halten, bevor Graph aufgerufen wird.
+      - service: "shell_command.{{ refresh_command }}"
+      - delay: "00:00:03"
+      - service: homeassistant.update_entity
+        target:
+          entity_id: "{{ token_sensor }}"
+      - delay: "00:00:02"
+
+      # 2) Je nach Trigger Status setzen oder Fenster-Ende-Aktion ausführen.
+      - choose:
+          # Zeitfenster beginnt -> gewählten Status setzen.
+          - conditions:
+              - condition: trigger
+                id: window_start
+            sequence:
               - service: rest_command.set_teams_presence
                 data:
-                  availability: "{{ end_action.split('|')[0] }}"
-                  activity: "{{ end_action.split('|')[1] }}"
+                  availability: "{{ presence_status.split('|')[0] }}"
+                  activity: "{{ presence_status.split('|')[1] }}"
+
+          # Zeitfenster endet -> aufheben oder festen Status setzen.
+          - conditions:
+              - condition: trigger
+                id: window_end
+            sequence:
+              - choose:
+                  - conditions: "{{ end_action == 'clear' }}"
+                    sequence:
+                      - service: rest_command.clear_teams_presence
+                default:
+                  - service: rest_command.set_teams_presence
+                    data:
+                      availability: "{{ end_action.split('|')[0] }}"
+                      activity: "{{ end_action.split('|')[1] }}"

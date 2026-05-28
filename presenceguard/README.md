@@ -245,10 +245,21 @@ Dann konfigurieren:
 | **Aktion bei Zeitplan-Ende** | Status aufheben (echter Status) oder festen Status setzen |
 | **Token-Sensor** | Standard `sensor.presence_token` |
 | **Token-Refresh Shell Command** | Standard `refresh_presence_token` |
+| **Token-Status-Sensor (für Warnung)** | Standard `binary_sensor.presenceguard_token` |
+| **Warnen ab Token-Alter (Minuten)** | Über diesem Alter gilt der Refresh als hängend (Standard 90) |
+| **Warnen bei Status Getrennt ab (Minuten)** | „Getrennt"-Dauer bis zur Warnung (Standard 15) |
+| **Link zum Erneuern** | URL, die in der Warnmeldung als *Jetzt erneuern* verlinkt wird |
+| **Zusätzliche Benachrichtigung (optional)** | z. B. Push via `notify.mobile_app_…`; leer = nur UI-Meldung |
 
 Die Blueprint-Automation frischt vor jedem Graph-Aufruf den Token auf, setzt
 zum Fenster-Start den gewählten Status und führt zum Fenster-Ende die gewählte
 End-Aktion aus.
+
+> **Optionale Token-Warnung:** Wird der Token zu alt (Refresh hängt) oder fehlen
+> die Token-Daten, postet die Automation eine UI-Benachrichtigung mit
+> **Erneuern-Link** (und optional einen Push). So verpasst du die nötige
+> Neu-Anmeldung nicht – besonders bei Conditional-Access „Sign-in frequency".
+> Voraussetzung: `template_presenceguard.yaml` ist eingebunden.
 
 > **Klassik oder Blueprint?** Nutze **entweder** die festen Automationen aus
 > `automations_presenceguard.yaml` **oder** die Blueprint-Automation – nicht
