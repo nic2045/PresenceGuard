@@ -105,6 +105,7 @@ end-to-end dokumentiert.
 | `presenceguard/shell_commands.yaml` | Token-Refresh-Aufruf |
 | `presenceguard/automations_presenceguard.yaml` | Klassische Automationen |
 | `presenceguard/entra_app_setup.md` | Entra ID App Registration (beide Wege) |
+| `presenceguard/setup_presenceguard.sh` | Interaktiver Setup-Wizard |
 | `presenceguard/token_setup.sh` / `token_refresh.sh` | Token-Scripte (delegiert + App-only) |
 
 Entwicklungshinweise: [`CLAUDE.md`](CLAUDE.md).
