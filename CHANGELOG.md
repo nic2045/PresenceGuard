@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/nic2045/PresenceGuard/compare/v0.2.2...v0.2.3) (2026-05-28)
+
+
+### Features
+
+* UI-Status-Sensor für Token + robuster Token-Sensor ([#5](https://github.com/nic2045/PresenceGuard/issues/5)) ([c329636](https://github.com/nic2045/PresenceGuard/commit/c3296363e44a2e0ad61874237211a004b24f92c7))
+
 ## [0.2.2](https://github.com/nic2045/PresenceGuard/compare/v0.2.1...v0.2.2) (2026-05-28)
 
 
