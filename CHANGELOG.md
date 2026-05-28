@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/nic2045/PresenceGuard/compare/v0.3.0...v0.3.1) (2026-05-28)
+
+
+### Features
+
+* Token-Warnung in den Presence-Blueprint integrieren (UI + Erneuern-Link) ([#19](https://github.com/nic2045/PresenceGuard/issues/19)) ([3620933](https://github.com/nic2045/PresenceGuard/commit/3620933a494fb5c0fe0372e1c03a14d086f1e52b))
+
 ## [0.3.0](https://github.com/nic2045/PresenceGuard/compare/v0.2.7...v0.3.0) (2026-05-28)
 
 
