@@ -21,6 +21,10 @@
         {
           "type": "generic",
           "path": "src/pyshell_starter/__init__.py"
+        },
+        {
+          "type": "generic",
+          "path": "presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml"
         }
       ]
     }
