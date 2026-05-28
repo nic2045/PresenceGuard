@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
-# PresenceGuard – Access Token via Refresh Token erneuern.
+# PresenceGuard – Access Token erneuern (von HA per shell_command aufgerufen).
 #
-# Wird von Home Assistant per shell_command (alle ~30 Min + beim Start)
-# aufgerufen. Liest die Zugangsdaten aus /config/secrets.yaml, holt einen
-# frischen access_token und schreibt ihn nach /config/presence_token.json.
+# Unterstützt BEIDE Auth-Wege und wählt automatisch:
 #
-# Microsoft Entra rotiert Refresh Tokens: bei jeder Erneuerung kommt ein
-# neuer refresh_token zurück. Diesen persistieren wir in
-# /config/presence_refresh_token.txt und nutzen ihn beim nächsten Lauf
-# bevorzugt vor dem (initialen) Wert aus secrets.yaml.
+#   1) DELEGIERT (Authorization Code Flow): Liegt ein Refresh Token vor
+#      (rotiert in /config/presence_refresh_token.txt oder initial aus
+#      secrets.yaml: presence_refresh_token), wird grant_type=refresh_token
+#      genutzt. Entra rotiert den Refresh Token – der neue wird persistiert.
+#      Berechtigung: delegated Presence.ReadWrite (kein Admin-Consent nötig).
+#      Vorbereitung: einmalig token_setup.sh ausführen.
+#
+#   2) APP-ONLY (Client Credentials Flow): Ist KEIN Refresh Token vorhanden,
+#      aber ein client_secret, wird grant_type=client_credentials genutzt.
+#      Berechtigung: application Presence.ReadWrite.All (Admin-Consent nötig).
+#      Kein interaktiver Login, kein token_setup.sh.
+#
+# Das Ergebnis ist in beiden Fällen /config/presence_token.json mit
+# access_token + user_id + Zeitstempel.
 #
 # Voraussetzungen: bash, curl. (jq optional.)
 
@@ -17,7 +25,8 @@ set -euo pipefail
 SECRETS_FILE="${SECRETS_FILE:-/config/secrets.yaml}"
 TOKEN_FILE="${TOKEN_FILE:-/config/presence_token.json}"
 REFRESH_FILE="${REFRESH_FILE:-/config/presence_refresh_token.txt}"
-SCOPE="offline_access openid profile Presence.ReadWrite"
+SCOPE_DELEGATED="offline_access openid profile Presence.ReadWrite"
+SCOPE_APP="https://graph.microsoft.com/.default"
 
 # --- secrets.yaml-Wert auslesen (einfache key: "value" Zeilen) ---------------
 secret_get() {
@@ -26,6 +35,14 @@ secret_get() {
     | sed -E "s/^[[:space:]]*${1}:[[:space:]]*//" \
     | sed -E 's/^["'\'']//; s/["'\'']$//' \
     | tr -d '\r'
+}
+
+# Platzhalterwerte aus dem Template als "leer" behandeln.
+clean_value() {
+  case "$1" in
+    *REPLACE*) printf '' ;;
+    *) printf '%s' "$1" ;;
+  esac
 }
 
 json_get() {
@@ -42,40 +59,59 @@ if [ ! -r "$SECRETS_FILE" ]; then
 fi
 
 CLIENT_ID="$(secret_get presence_client_id)"
-CLIENT_SECRET="$(secret_get presence_client_secret)"
+CLIENT_SECRET="$(clean_value "$(secret_get presence_client_secret)")"
 TENANT_ID="$(secret_get presence_tenant_id)"
 USER_ID="$(secret_get presence_user_id)"
 
-# Rotierten Refresh Token bevorzugen, sonst initialen aus secrets.yaml
+# Rotierten Refresh Token bevorzugen, sonst initialen aus secrets.yaml.
+REFRESH_TOKEN=""
 if [ -s "$REFRESH_FILE" ]; then
   REFRESH_TOKEN="$(tr -d '\r\n' < "$REFRESH_FILE")"
 else
-  REFRESH_TOKEN="$(secret_get presence_refresh_token)"
+  REFRESH_TOKEN="$(clean_value "$(secret_get presence_refresh_token)")"
 fi
 
-if [ -z "$CLIENT_ID" ] || [ -z "$TENANT_ID" ] || [ -z "$REFRESH_TOKEN" ]; then
-  echo "FEHLER: client_id, tenant_id oder refresh_token fehlt." >&2
+if [ -z "$CLIENT_ID" ] || [ -z "$TENANT_ID" ]; then
+  echo "FEHLER: client_id oder tenant_id fehlt." >&2
   exit 1
 fi
 
-# --- Token-Request -----------------------------------------------------------
-set -- \
-  -d "client_id=${CLIENT_ID}" \
-  -d "grant_type=refresh_token" \
-  -d "refresh_token=${REFRESH_TOKEN}" \
-  --data-urlencode "scope=${SCOPE}"
+TOKEN_ENDPOINT="https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token"
+NEW_REFRESH=""
 
-# Client Secret nur anhängen, wenn als Confidential Client konfiguriert.
-if [ -n "$CLIENT_SECRET" ] && [ "$CLIENT_SECRET" != "REPLACE_OR_LEAVE_EMPTY" ]; then
-  set -- "$@" --data-urlencode "client_secret=${CLIENT_SECRET}"
+# --- Modus wählen ------------------------------------------------------------
+if [ -n "$REFRESH_TOKEN" ]; then
+  # ----- (1) DELEGIERT: Refresh Token Flow -----------------------------------
+  set -- \
+    -d "client_id=${CLIENT_ID}" \
+    -d "grant_type=refresh_token" \
+    -d "refresh_token=${REFRESH_TOKEN}" \
+    --data-urlencode "scope=${SCOPE_DELEGATED}"
+
+  # Client Secret nur anhängen, wenn als Confidential Client konfiguriert.
+  if [ -n "$CLIENT_SECRET" ]; then
+    set -- "$@" --data-urlencode "client_secret=${CLIENT_SECRET}"
+  fi
+
+  RESP="$(curl -sS -X POST "$TOKEN_ENDPOINT" "$@")"
+  NEW_REFRESH="$(printf '%s' "$RESP" | json_get refresh_token)"
+else
+  # ----- (2) APP-ONLY: Client Credentials Flow -------------------------------
+  if [ -z "$CLIENT_SECRET" ]; then
+    echo "FEHLER: Kein Refresh Token UND kein Client Secret gefunden." >&2
+    echo "Entweder token_setup.sh ausführen (delegiert) oder presence_client_secret" >&2
+    echo "in secrets.yaml setzen (App-only). Siehe entra_app_setup.md." >&2
+    exit 1
+  fi
+
+  RESP="$(curl -sS -X POST "$TOKEN_ENDPOINT" \
+    -d "client_id=${CLIENT_ID}" \
+    -d "grant_type=client_credentials" \
+    --data-urlencode "client_secret=${CLIENT_SECRET}" \
+    --data-urlencode "scope=${SCOPE_APP}")"
 fi
 
-RESP="$(curl -sS -X POST \
-  "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
-  "$@")"
-
 ACCESS_TOKEN="$(printf '%s' "$RESP" | json_get access_token)"
-NEW_REFRESH="$(printf '%s' "$RESP" | json_get refresh_token)"
 
 if [ -z "$ACCESS_TOKEN" ]; then
   echo "FEHLER: Kein access_token erhalten. Antwort:" >&2
@@ -84,7 +120,7 @@ if [ -z "$ACCESS_TOKEN" ]; then
 fi
 
 # --- Persistieren ------------------------------------------------------------
-# Rotierten Refresh Token sichern (falls einer zurückkam).
+# Rotierten Refresh Token sichern (nur im delegierten Modus relevant).
 if [ -n "$NEW_REFRESH" ]; then
   umask 077
   printf '%s' "$NEW_REFRESH" > "${REFRESH_FILE}.tmp"

@@ -28,8 +28,11 @@ oder Python-Daemon. Nur `bash`, `curl` und natives HA-YAML.
 
 ### 🔐 Token-Handling
 - **Automatischer Refresh** — Access Token wird alle 30 Min und beim HA-Start
-  über den Refresh Token erneuert
+  erneuert; `token_refresh.sh` wählt automatisch delegiert (Refresh Token) oder
+  App-only (Client Credentials)
 - **Token-Sensor** — umgeht das 255-Zeichen-State-Limit für lange Tokens
+- **Status-Sensor** — `binary_sensor.presenceguard_token` zeigt in der UI, ob
+  gültige Token-Daten vorliegen
 
 ---
 
@@ -46,8 +49,10 @@ Microsoft-Doku-Begründung: [`presenceguard/README.md`](presenceguard/README.md#
 ## Requirements
 
 ### Entra ID App Registration (erforderlich)
-Delegierte Berechtigung `Presence.ReadWrite`, Public-Client-Flows aktiviert.
-Schritt für Schritt: [`presenceguard/entra_app_setup.md`](presenceguard/entra_app_setup.md).
+Zwei Wege: **A) delegiert** `Presence.ReadWrite` (kein Admin, nur dein Konto)
+oder **B) App-only** `Presence.ReadWrite.All` + Admin-Consent + Client Secret.
+Schritt für Schritt:
+[`presenceguard/entra_app_setup.md`](presenceguard/entra_app_setup.md).
 
 ### Zeitplan-Helper (für Blueprint, empfohlen)
 **Via UI:** Einstellungen → Geräte & Dienste → Helfer → *+ Helfer* → **Zeitplan**.
@@ -96,10 +101,11 @@ end-to-end dokumentiert.
 | `presenceguard/schedule_helper_presenceguard.yaml` | Beispiel-Zeitplan-Helper |
 | `presenceguard/rest_commands.yaml` | Graph REST Commands |
 | `presenceguard/command_line_presenceguard.yaml` | Token-Sensor |
+| `presenceguard/template_presenceguard.yaml` | Status-Sensor (UI: Token-Daten da?) |
 | `presenceguard/shell_commands.yaml` | Token-Refresh-Aufruf |
 | `presenceguard/automations_presenceguard.yaml` | Klassische Automationen |
-| `presenceguard/entra_app_setup.md` | Entra ID App Registration |
-| `presenceguard/token_setup.sh` / `token_refresh.sh` | Token-Scripte |
+| `presenceguard/entra_app_setup.md` | Entra ID App Registration (beide Wege) |
+| `presenceguard/token_setup.sh` / `token_refresh.sh` | Token-Scripte (delegiert + App-only) |
 
 Entwicklungshinweise: [`CLAUDE.md`](CLAUDE.md).
 

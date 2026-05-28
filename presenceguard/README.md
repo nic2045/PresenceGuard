@@ -14,8 +14,9 @@ HA-YAML.
 | **Sa 00:00** | `setUserPreferredPresence` (Offline/OffWork) | **Offline** |
 | **So** | – (bleibt automatisch Offline bis Mo 09:00) | **Offline** |
 
-Der Access Token wird alle 30 Minuten (und beim HA-Start) automatisch über
-den Refresh Token erneuert.
+Der Access Token wird alle 30 Minuten (und beim HA-Start) automatisch erneuert –
+wahlweise delegiert (Refresh Token) oder App-only (Client Credentials).
+`token_refresh.sh` wählt den Modus automatisch.
 
 ---
 
@@ -35,8 +36,9 @@ funktioniert das für diesen Zweck aber **nicht** zuverlässig:
 `setUserPreferredPresence` (`Offline`/`OffWork`) setzt dagegen den
 **bevorzugten** Status, der den tatsächlichen Teams-Status **überschreibt** –
 genau das gewünschte „erscheint offline". `clearUserPreferredPresence` hebt
-das wieder auf. Beide brauchen dieselbe delegierte Berechtigung
-`Presence.ReadWrite`.
+das wieder auf. Beide brauchen dieselbe Berechtigung – je nach gewähltem
+Auth-Weg delegiert `Presence.ReadWrite` oder application `Presence.ReadWrite.All`
+(siehe [`entra_app_setup.md`](entra_app_setup.md)).
 
 > Hinweis: Der bevorzugte Status wirkt nur, solange mindestens eine
 > Presence-Session existiert (z. B. Teams-Client angemeldet). Ohne Session ist
@@ -49,9 +51,9 @@ das wieder auf. Beide brauchen dieselbe delegierte Berechtigung
 
 | Datei | Zweck |
 | --- | --- |
-| `entra_app_setup.md` | App Registration in Entra ID (Schritt für Schritt) |
-| `token_setup.sh` | Einmaliger Token-Grab via Device Code Flow → Refresh Token |
-| `token_refresh.sh` | Erneuert den Access Token via Refresh Token (von HA aufgerufen) |
+| `entra_app_setup.md` | App Registration in Entra ID (beide Auth-Wege) |
+| `token_setup.sh` | Nur Weg A (delegiert): einmaliger Token-Grab via Authorization Code + PKCE → Refresh Token |
+| `token_refresh.sh` | Erneuert das Access Token (erkennt Refresh-Token- vs. Client-Credentials-Modus automatisch) |
 | `secrets.yaml` | Vorlage mit Platzhaltern für `/config/secrets.yaml` |
 | `rest_commands.yaml` | `set_teams_offline` + `clear_teams_presence` + parametrierbar `set_teams_presence` |
 | `command_line_presenceguard.yaml` | Token-Sensor (umgeht das 255-Zeichen-State-Limit) |
@@ -65,17 +67,29 @@ das wieder auf. Beide brauchen dieselbe delegierte Berechtigung
 
 ## Setup end-to-end
 
-### 1. Entra ID App Registration
-Folge [`entra_app_setup.md`](entra_app_setup.md). Ergebnis: `client_id`,
-`tenant_id`, `user_id` (und optional `client_secret`).
+### 1. Entra ID App Registration & Auth-Weg wählen
+Folge [`entra_app_setup.md`](entra_app_setup.md) und entscheide dich für einen
+der zwei Wege. Ergebnis in beiden Fällen: `client_id`, `tenant_id`, `user_id`.
 
-### 2. Refresh Token holen (einmalig, lokal)
+- **Weg A – delegiert** (`Presence.ReadWrite`, kein Admin nötig, nur dein
+  Konto): zusätzlich einen **Refresh Token** via `token_setup.sh`.
+- **Weg B – App-only** (`Presence.ReadWrite.All`, Admin-Consent, tenant-weit):
+  zusätzlich ein **Client Secret**.
+
+### 2A. Nur Weg A: Refresh Token holen (einmalig, lokal)
+Auf einem Rechner **mit Browser** ausführen (Authorization Code Flow + PKCE):
 ```bash
 TENANT_ID=<deine-tenant-id> CLIENT_ID=<deine-client-id> ./token_setup.sh
 ```
-Im Browser unter `https://microsoft.com/devicelogin` den angezeigten Code
-eingeben, anmelden, Berechtigung bestätigen. Das Script gibt am Ende
-`presence_refresh_token: "..."` aus.
+Das Script öffnet (bzw. zeigt) eine Anmelde-URL. Melde dich mit dem
+Microsoft-365-Konto an und bestätige `Presence.ReadWrite`. Der Browser leitet
+auf `http://localhost:8400` zurück; das Script fängt den Code automatisch ab
+(via `python3`) oder du fügst die zurückgeleitete URL einmal manuell ein. Am
+Ende gibt es `presence_refresh_token: "..."` aus.
+
+> Voraussetzungen: `bash`, `curl`, `openssl`; `python3`/`jq` optional. Die
+> Redirect-URI `http://localhost` muss registriert sein. Anderer Port?
+> `REDIRECT_PORT=...` voranstellen. **Weg B überspringt diesen Schritt.**
 
 ### 3. Dateien auf den HA-Host kopieren
 Lege die YAML-Dateien **und** das Script `token_refresh.sh` im Verzeichnis
@@ -99,12 +113,11 @@ Legst du das Script woanders ab, passe diesen Pfad entsprechend an. Der
 `shell_command`-Key (`refresh_presence_token`) ist genau der Wert, den das
 Blueprint unter **Token-Refresh Shell Command** erwartet.
 
-(`token_setup.sh` muss nicht auf den HA-Host – es ist ein Einmal-Tool.)
-
 ### 4. Secrets eintragen
 Übernimm die Keys aus [`secrets.yaml`](secrets.yaml) in deine
-`/config/secrets.yaml` und fülle die Werte – inklusive des
-`presence_refresh_token` aus Schritt 2.
+`/config/secrets.yaml`. Immer: `presence_client_id`, `presence_tenant_id`,
+`presence_user_id`. Dazu je nach Weg **entweder** `presence_refresh_token`
+(Weg A) **oder** `presence_client_secret` (Weg B).
 
 ### 5. configuration.yaml ergänzen
 ```yaml
@@ -229,7 +242,7 @@ End-Aktion aus.
 | Pfad | Inhalt |
 | --- | --- |
 | `/config/presence_token.json` | aktueller `access_token` + `user_id` + Zeitstempel |
-| `/config/presence_refresh_token.txt` | rotierter Refresh Token (Vorrang vor secrets.yaml) |
+| `/config/presence_refresh_token.txt` | nur Weg A: rotierter Refresh Token (Vorrang vor secrets.yaml) |
 
 Beide enthalten Geheimnisse – nicht ins Git committen (in `.gitignore` lassen).
 
@@ -239,10 +252,12 @@ Beide enthalten Geheimnisse – nicht ins Git committen (in `.gitignore` lassen)
 
 | Symptom | Ursache / Fix |
 | --- | --- |
-| `AADSTS7000218` in token_setup.sh | „Allow public client flows" auf **Yes** stellen (entra_app_setup.md, Schritt 2). |
-| Kein `refresh_token` | Scope `offline_access` fehlt oder User-Consent verweigert. |
+| `AADSTS7000218` (Weg A, token_setup.sh) | „Allow public client flows" auf **Yes** stellen (entra_app_setup.md, 2A.1). |
+| Kein `refresh_token` (Weg A) | Scope `offline_access` fehlt oder User-Consent verweigert. |
+| `invalid_client` / `AADSTS7000215` (Weg B) | Client Secret falsch oder abgelaufen → neues Secret erstellen und `presence_client_secret` aktualisieren (entra_app_setup.md, 2B.1). |
+| `token_refresh.sh` → „Kein Refresh Token UND kein Client Secret" | In `secrets.yaml` entweder `presence_refresh_token` (Weg A) oder `presence_client_secret` (Weg B) befüllen. |
 | REST Command → `401` | Token abgelaufen → `shell_command.refresh_presence_token` ausführen; prüfe, ob `sensor.presence_token` ein `access_token`-Attribut hat. |
-| REST Command → `403` | `Presence.ReadWrite` fehlt / kein Consent. |
+| REST Command → `403` | Weg A: delegiertes `Presence.ReadWrite` fehlt/kein Consent. Weg B: **Application** `Presence.ReadWrite.All` fehlt oder kein Admin-Consent. |
 | Status ändert sich nicht | Teams-Client muss angemeldet sein, damit eine Presence-Session existiert; `user_id` korrekt (GUID/UPN)? |
 | `sensor.presence_token` hat keine Attribute / `binary_sensor.presenceguard_token` = *Getrennt* | `/config/presence_token.json` fehlt oder ist leer → token_refresh.sh manuell laufen lassen. |
 
