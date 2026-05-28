@@ -25,6 +25,11 @@
         {
           "type": "generic",
           "path": "presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml"
+        },
+        {
+          "type": "json",
+          "path": "custom_components/presenceguard/manifest.json",
+          "jsonpath": "$.version"
         }
       ]
     }
