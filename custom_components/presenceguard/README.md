@@ -1,51 +1,51 @@
 # PresenceGuard – Custom Integration (HA-native)
 
-UI-native Alternative zum YAML/Bash-Setup: Anmeldung **direkt in Home Assistant**
-(OAuth2), automatische Token-Erneuerung und – wenn die Anmeldung abläuft – eine
-**Reauth-Karte in Einstellungen → Reparaturen** zum erneuten Anmelden. Kein
-`token_setup.sh`, kein `secrets.yaml`, kein Shell-Command.
+UI-native alternative to the YAML/bash setup: sign in **directly in Home Assistant**
+(OAuth2), automatic token renewal and – when the sign-in expires – a
+**reauth card in Settings → Repairs** for signing in again. No
+`token_setup.sh`, no `secrets.yaml`, no shell command.
 
-> Auth-Modell: **delegiert** (`Presence.ReadWrite`, nur dein eigenes Konto –
-> least privilege). Kein Admin-Consent nötig.
+> Auth model: **delegated** (`Presence.ReadWrite`, only your own account –
+> least privilege). No admin consent needed.
 
 ## Installation
 
-1. Ordner `custom_components/presenceguard/` nach `<config>/custom_components/`
-   kopieren (oder das Repo in **HACS** als *Custom repository* vom Typ
-   *Integration* hinzufügen). HA neu starten.
-2. **Entra ID App Registration** anlegen (siehe
+1. Copy the `custom_components/presenceguard/` folder to `<config>/custom_components/`
+   (or add the repo in **HACS** as a *custom repository* of type
+   *Integration*). Restart HA.
+2. Create an **Entra ID App Registration** (see
    [`../presenceguard/entra_app_setup.md`](../presenceguard/entra_app_setup.md)),
-   aber als Redirect-URI vom Typ **Web**:
+   but with a redirect URI of type **Web**:
    `https://my.home-assistant.io/redirect/oauth`.
-   Berechtigung: delegiert **`Presence.ReadWrite`**. Ein **Client Secret**
-   erstellen (Web-App = Confidential Client).
-3. In HA: **Einstellungen → Geräte & Dienste → Integration hinzufügen →
-   PresenceGuard**. Beim ersten Mal nach **Application Credentials**
-   (Client ID + Client Secret) gefragt → eintragen.
-4. Es öffnet sich die **Microsoft-Anmeldung**. Anmelden, `Presence.ReadWrite`
-   bestätigen – fertig.
+   Permission: delegated **`Presence.ReadWrite`**. Create a **client secret**
+   (web app = confidential client).
+3. In HA: **Settings → Devices & Services → Add integration →
+   PresenceGuard**. The first time you will be asked for **application credentials**
+   (client ID + client secret) → enter them.
+4. The **Microsoft sign-in** opens. Sign in, confirm `Presence.ReadWrite` –
+   done.
 
-## Was du bekommst
+## What you get
 
-- `binary_sensor.presenceguard_token` – „Verbunden", solange der Token gültig ist
-  (Attribute: aktuelle availability/activity).
+- `binary_sensor.presenceguard_token` – "Connected" as long as the token is valid
+  (attributes: current availability/activity).
 - Services:
-  - `presenceguard.set_offline` – Offline (OffWork) setzen
-  - `presenceguard.clear_presence` – bevorzugten Status aufheben
-  - `presenceguard.set_presence` – `availability` (+ optional `activity`) setzen
+  - `presenceguard.set_offline` – set Offline (OffWork)
+  - `presenceguard.clear_presence` – clear the preferred status
+  - `presenceguard.set_presence` – set `availability` (+ optional `activity`)
 
-Diese Services lassen sich genau wie die bisherigen `rest_command.*` in
-Automationen/Blueprint verwenden.
+These services can be used in automations/blueprints exactly like the previous
+`rest_command.*`.
 
-## Reauth (Reparaturen)
+## Reauth (Repairs)
 
-Läuft die Anmeldung ab (z. B. Conditional-Access „Sign-in frequency"), erkennt
-die Integration das beim nächsten Poll und meldet `ConfigEntryAuthFailed` →
-Home Assistant zeigt **automatisch eine Reauth-Karte** unter *Einstellungen →
-Geräte & Dienste* bzw. *Reparaturen*. Ein Klick → erneute Microsoft-Anmeldung,
-und es läuft weiter. Kein Terminal nötig.
+When the sign-in expires (e.g. Conditional Access "Sign-in frequency"), the
+integration detects this on the next poll and reports `ConfigEntryAuthFailed` →
+Home Assistant **automatically shows a reauth card** under *Settings →
+Devices & Services* or *Repairs*. One click → sign in to Microsoft again,
+and it keeps running. No terminal needed.
 
-> Hinweis: Diese Integration ist die UI-native Alternative. Das klassische
-> YAML/Bash-Setup unter [`../presenceguard/`](../presenceguard/) bleibt
-> unverändert nutzbar – nutze **eines von beiden**, nicht parallel für dasselbe
-> Konto.
+> Note: This integration is the UI-native alternative. The classic
+> YAML/bash setup under [`../presenceguard/`](../presenceguard/) remains
+> usable unchanged – use **one of the two**, not both in parallel for the same
+> account.

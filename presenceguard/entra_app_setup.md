@@ -1,110 +1,117 @@
 # Entra ID App Registration – PresenceGuard
 
-Diese Anleitung richtet eine **App Registration** in Microsoft Entra ID
-(früher Azure AD) ein, damit Home Assistant per Microsoft Graph deinen
-Teams-Präsenzstatus setzen darf.
+This guide sets up an **App Registration** in Microsoft Entra ID
+(formerly Azure AD) so that Home Assistant may set your Teams presence status
+via Microsoft Graph.
 
-> **Auth-Modell:** Delegated Permission (`Presence.ReadWrite`) +
-> OAuth2 **Authorization Code Flow mit PKCE** für die einmalige Anmeldung,
-> danach Refresh-Token-Flow für den Dauerbetrieb. Dieser Flow ist an die
-> Browser-Session deines Geräts gebunden (Redirect auf `http://localhost`) und
-> damit phishing-resistenter als der Device Code Flow. Es wird **kein**
-> Premium-Plan, kein Power Automate und kein Application Permission /
-> Admin-Consent für App-only benötigt – du steuerst nur **dein eigenes** Konto.
+> **Auth model:** Delegated permission (`Presence.ReadWrite`) +
+> OAuth2 **authorization code flow with PKCE** for the one-time sign-in,
+> then the refresh-token flow for continuous operation. This flow is bound to
+> the browser session of your device (redirect to `http://localhost`) and is
+> therefore more phishing-resistant than the device code flow. **No**
+> Premium plan, no Power Automate and no application permission /
+> admin consent for app-only is required – you control only **your own** account.
+
+> **Are you using the custom integration** (UI login instead of `token_setup.sh`)? Then in
+> step 1, instead of the loopback address, create a redirect URI of type **Web** with
+> `https://my.home-assistant.io/redirect/oauth` **and** create a **client
+> secret** (confidential client). The permission remains delegated
+> `Presence.ReadWrite`. Details:
+> [`../custom_components/presenceguard/README.md`](../custom_components/presenceguard/README.md).
 
 ---
 
-## 1. App registrieren
+## 1. Register the app
 
-1. Öffne das [Entra Admin Center](https://entra.microsoft.com) →
+1. Open the [Entra Admin Center](https://entra.microsoft.com) →
    **Identity → Applications → App registrations → New registration**.
 2. **Name:** `PresenceGuard`
 3. **Supported account types:**
    *Accounts in this organizational directory only (Single tenant)*
 4. **Redirect URI:** Platform **Public client/native (mobile & desktop)** →
    `http://localhost`
-   > Genau diese Loopback-Adresse muss registriert sein. Entra ignoriert bei
-   > `http://localhost` den Port, daher funktioniert der von `token_setup.sh`
-   > genutzte Port (Standard 8400) ohne weitere Einträge.
-5. **Register** klicken.
+   > Exactly this loopback address must be registered. For
+   > `http://localhost` Entra ignores the port, so the port used by
+   > `token_setup.sh` (default 8400) works without further entries.
+5. Click **Register**.
 
-Nach dem Anlegen notierst du dir auf der Übersichtsseite:
+After creating it, note the following on the overview page:
 
-| Wert | Wo zu finden | secrets.yaml-Key |
+| Value | Where to find | secrets.yaml key |
 | --- | --- | --- |
 | **Application (client) ID** | Overview | `presence_client_id` |
 | **Directory (tenant) ID** | Overview | `presence_tenant_id` |
 
 ---
 
-## 2. Public Client Flow erlauben
+## 2. Allow public client flow
 
-1. **Authentication** öffnen.
-2. Unter **Advanced settings → Allow public client flows** auf **Yes** stellen.
+1. Open **Authentication**.
+2. Under **Advanced settings → Allow public client flows** set it to **Yes**.
 3. **Save**.
 
-> Der Public-Client-Token-Tausch (Authorization Code + PKCE **ohne**
-> Client Secret) setzt diese Einstellung voraus. Ohne sie schlägt der
-> Token-Endpoint mit `AADSTS7000218` fehl. Betreibst du die App stattdessen als
-> Confidential Client (mit Secret), kannst du sie auf **No** lassen – dann
-> trägst du das Secret als `presence_client_secret` ein (Abschnitt 4).
+> The public-client token exchange (authorization code + PKCE **without**
+> a client secret) requires this setting. Without it the
+> token endpoint fails with `AADSTS7000218`. If you instead run the app as a
+> confidential client (with a secret), you can leave it on **No** – then
+> you enter the secret as `presence_client_secret` (section 4).
 
 ---
 
-## 3. API-Berechtigung hinzufügen
+## 3. Add the API permission
 
 1. **API permissions → Add a permission → Microsoft Graph →
    Delegated permissions**.
-2. Suche nach `Presence.ReadWrite` und setze den Haken.
+2. Search for `Presence.ReadWrite` and tick the box.
 3. **Add permissions**.
-4. Optional, aber empfohlen: **Grant admin consent for &lt;Tenant&gt;**.
-   Ohne Admin-Consent musst du der App beim ersten Login im Browser
-   einmalig selbst zustimmen – das funktioniert auch ohne Admin-Rechte,
-   solange dein Tenant das User-Consent erlaubt.
+4. Optional, but recommended: **Grant admin consent for &lt;Tenant&gt;**.
+   Without admin consent you have to consent to the app yourself once
+   at the first login in the browser – this also works without admin rights,
+   as long as your tenant allows user consent.
 
-`offline_access`, `openid` und `profile` musst du **nicht** explizit
-hinzufügen – diese fordert `token_setup.sh` als Scope an und sie sind
-standardmäßig erlaubt. `offline_access` ist nötig, damit du überhaupt einen
-Refresh Token bekommst.
+You do **not** have to add `offline_access`, `openid` and `profile`
+explicitly – `token_setup.sh` requests these as a scope and they are
+allowed by default. `offline_access` is needed so that you get a
+refresh token at all.
 
 ---
 
-## 4. Client Secret – wann nötig?
+## 4. Client secret – when is it needed?
 
-**Für den empfohlenen Public-Client-Weg (PKCE): NICHT nötig.** Lass
-`presence_client_secret` in `secrets.yaml` einfach leer. Sowohl `token_setup.sh`
-als auch `token_refresh.sh` arbeiten ohne Secret, sobald „Allow public client
-flows = Yes" gesetzt ist. PKCE übernimmt die Absicherung.
+**For the recommended public-client approach (PKCE): NOT needed.** Simply leave
+`presence_client_secret` in `secrets.yaml` empty. Both `token_setup.sh`
+and `token_refresh.sh` work without a secret once "Allow public client
+flows = Yes" is set. PKCE handles the protection.
 
-Nur falls du die App als **Confidential Client** betreiben willst
+Only if you want to run the app as a **confidential client**
 (public client flows = No):
 
 1. **Certificates & secrets → Client secrets → New client secret**.
-2. Beschreibung + Ablauf wählen (max. 24 Monate), **Add**.
-3. Den **Value** (nicht die Secret ID!) sofort kopieren – er wird nur einmal
-   angezeigt – und als `presence_client_secret` in `secrets.yaml` eintragen.
+2. Choose a description + expiry (max. 24 months), **Add**.
+3. Copy the **Value** (not the Secret ID!) immediately – it is only shown
+   once – and enter it as `presence_client_secret` in `secrets.yaml`.
 
-`token_setup.sh` und `token_refresh.sh` hängen das Secret automatisch an, sobald
-`presence_client_secret` befüllt ist.
-
----
-
-## 5. User-ID – automatisch
-
-Die User-ID musst du normalerweise **nicht** heraussuchen: `token_refresh.sh`
-ermittelt die Object ID des angemeldeten Kontos automatisch über
-`GET /me` und schreibt sie in die Token-Datei. Damit ist garantiert, dass der
-Status für genau den angemeldeten Nutzer gesetzt wird (kein 401
-„Cannot set the presence of another user").
-
-`presence_user_id` in `secrets.yaml` kann daher leer bleiben. Willst du es
-trotzdem setzen, nimm die **Object ID (GUID)** – nicht den UPN, da eine UPN auf
-ein anderes Objekt auflösen kann.
+`token_setup.sh` and `token_refresh.sh` append the secret automatically once
+`presence_client_secret` is filled in.
 
 ---
 
-## 6. Weiter geht's
+## 5. User ID – automatic
 
-Jetzt hast du `client_id` und `tenant_id` (und optional ein `client_secret`).
-Den Refresh Token holst du im nächsten Schritt mit `token_setup.sh` –
-siehe [README.md](README.md).
+Normally you do **not** have to look up the user ID: `token_refresh.sh`
+determines the object ID of the signed-in account automatically via
+`GET /me` and writes it to the token file. This guarantees that the
+status is set for exactly the signed-in user (no 401
+"Cannot set the presence of another user").
+
+`presence_user_id` in `secrets.yaml` can therefore stay empty. If you still
+want to set it, use the **Object ID (GUID)** – not the UPN, since a UPN can
+resolve to a different object.
+
+---
+
+## 6. What's next
+
+Now you have `client_id` and `tenant_id` (and optionally a `client_secret`).
+You get the refresh token in the next step with `token_setup.sh` –
+see [README.md](README.md).

@@ -6,56 +6,56 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Automatisches Setzen des **Microsoft Teams Presence-Status** über **Home
-Assistant** + **Microsoft Graph API** – ohne Premium, Power Automate, Node.js
-oder Python-Daemon. Nur `bash`, `curl` und natives HA-YAML.
+Automatically set your **Microsoft Teams presence status** via **Home
+Assistant** + **Microsoft Graph API** – without Premium, Power Automate, Node.js
+or a Python daemon. Just `bash`, `curl` and native HA YAML.
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fnic2045%2FPresenceGuard%2Fmain%2Fpresenceguard%2Fblueprints%2Fautomation%2Fpresenceguard%2Fpresence_schedule.yaml)
 
 ## Features
 
-### 🕒 Zeitsteuerung
-- **Zeitplan-Helper (`schedule`)** — beliebig viele Von/Bis-Fenster pro
-  Wochentag, komplett in der HA-UI konfigurierbar
-- **Klassik-Automationen** — alternativ feste Zeiten (Mo–Fr 17:00 Offline,
-  09:00 Reset, Sa 00:00) ohne Helper
+### 🕒 Time control
+- **Schedule helper (`schedule`)** — any number of from/to windows per
+  weekday, fully configurable in the HA UI
+- **Classic automations** — alternatively fixed times (Mon–Fri 17:00 Offline,
+  09:00 reset, Sat 00:00) without a helper
 
-### 🎚️ Status selbst setzen
-- **Status-Dropdown** — Offline / Abwesend / Bin gleich zurück / Beschäftigt /
-  Nicht stören
-- **Aktion bei Fenster-Ende** — bevorzugten Status aufheben (echter Status)
-  oder festen Status setzen
+### 🎚️ Set the status yourself
+- **Status dropdown** — Offline / Away / Be right back / Busy /
+  Do not disturb
+- **Action at window end** — clear the preferred status (real status)
+  or set a fixed status
 
-### 🔐 Token-Handling
-- **Automatischer Refresh** — Access Token wird alle 30 Min und beim HA-Start
-  über den Refresh Token erneuert (delegiert, `Presence.ReadWrite`); die user_id
-  wird automatisch ermittelt
-- **Token-Sensor** — umgeht das 255-Zeichen-State-Limit für lange Tokens
-- **Status-Sensor** — `binary_sensor.presenceguard_token` zeigt in der UI, ob
-  gültige Token-Daten vorliegen
+### 🔐 Token handling
+- **Automatic refresh** — the access token is renewed every 30 min and at HA
+  startup via the refresh token (delegated, `Presence.ReadWrite`); the user_id
+  is determined automatically
+- **Token sensor** — works around the 255-character state limit for long tokens
+- **Status sensor** — `binary_sensor.presenceguard_token` shows in the UI whether
+  valid token data is present
 
 ---
 
-## Warum `setUserPreferredPresence` statt `setPresence`?
+## Why `setUserPreferredPresence` instead of `setPresence`?
 
-`setPresence` unterstützt „Offline" nicht zuverlässig und wird von einem
-laufenden Teams-Client überstimmt. `setUserPreferredPresence` (`Offline`/`OffWork`)
-setzt den **bevorzugten** Status, der den tatsächlichen Teams-Status
-überschreibt; `clearUserPreferredPresence` hebt das wieder auf. Details und
-Microsoft-Doku-Begründung: [`presenceguard/README.md`](presenceguard/README.md#warum-setuserpreferredpresence-statt-setpresence).
+`setPresence` does not reliably support "Offline" and is overridden by a
+running Teams client. `setUserPreferredPresence` (`Offline`/`OffWork`)
+sets the **preferred** status, which overrides the actual Teams status;
+`clearUserPreferredPresence` reverts that again. Details and the
+Microsoft documentation rationale: [`presenceguard/README.md`](presenceguard/README.md#why-setuserpreferredpresence-instead-of-setpresence).
 
 ---
 
 ## Requirements
 
-### Entra ID App Registration (erforderlich)
-Delegierte Berechtigung **`Presence.ReadWrite`** (kein Admin nötig, steuert nur
-dein eigenes Konto), Public-Client-Flows aktiviert. Schritt für Schritt:
+### Entra ID App Registration (required)
+Delegated permission **`Presence.ReadWrite`** (no admin needed, controls only
+your own account), public client flows enabled. Step by step:
 [`presenceguard/entra_app_setup.md`](presenceguard/entra_app_setup.md).
 
-### Zeitplan-Helper (für Blueprint, empfohlen)
-**Via UI:** Einstellungen → Geräte & Dienste → Helfer → *+ Helfer* → **Zeitplan**.
-Zeitfenster per Drag & Drop ziehen — mehrere Fenster pro Tag möglich.
+### Schedule helper (for the blueprint, recommended)
+**Via UI:** Settings → Devices & Services → Helpers → *+ Helper* → **Schedule**.
+Drag the time windows into place — multiple windows per day are possible.
 
 **Via YAML:** [`presenceguard/schedule_helper_presenceguard.yaml`](presenceguard/schedule_helper_presenceguard.yaml).
 
@@ -63,61 +63,60 @@ Zeitfenster per Drag & Drop ziehen — mehrere Fenster pro Tag möglich.
 
 ## Install
 
-Es gibt **zwei Wege** – nutze einen davon:
+There are **two ways** – use one of them:
 
-### A) Custom Integration (UI-nativ, empfohlen)
-Anmeldung **direkt in Home Assistant** (OAuth2), automatische Token-Erneuerung
-und eine **Reauth-Karte in Reparaturen**, wenn die Anmeldung abläuft – ohne
-`token_setup.sh`/`secrets.yaml`. Per **HACS** (Custom repository, Typ
-*Integration*) oder `custom_components/presenceguard/` nach `<config>/` kopieren.
+### A) Custom Integration (UI-native, recommended)
+Sign in **directly in Home Assistant** (OAuth2), automatic token renewal
+and a **reauth card in Repairs** when the sign-in expires – without
+`token_setup.sh`/`secrets.yaml`. Via **HACS** (custom repository, type
+*Integration*) or by copying `custom_components/presenceguard/` to `<config>/`.
 Details: **[`custom_components/presenceguard/README.md`](custom_components/presenceguard/README.md)**.
 
-### B) Klassisch (YAML + bash)
-**Blueprint importieren** (My-HA-Badge oben) oder manuell:
-Einstellungen → Automationen & Szenen → Blueprints → *Blueprint importieren* →
-URL einfügen:
+### B) Classic (YAML + bash)
+**Import the blueprint** (My-HA badge above) or manually:
+Settings → Automations & Scenes → Blueprints → *Import blueprint* →
+paste the URL:
 ```
 https://raw.githubusercontent.com/nic2045/PresenceGuard/main/presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml
 ```
 
-Vollständiges Setup (App Registration, Token, REST/Shell Commands, Sensor,
-configuration.yaml) ist in **[`presenceguard/README.md`](presenceguard/README.md)**
-end-to-end dokumentiert.
+The full setup (app registration, token, REST/shell commands, sensor,
+configuration.yaml) is documented end-to-end in **[`presenceguard/README.md`](presenceguard/README.md)**.
 
 ---
 
-## Konfiguration per UI (Blueprint)
+## Configuration via UI (blueprint)
 
-| Eingabe | Bedeutung |
+| Input | Meaning |
 | --- | --- |
-| **Zeitplan (Helper)** | Schedule-Helper – legt *Von/Bis* fest (mehrere Fenster) |
-| **Status während des Zeitplans** | Dropdown: Offline / Abwesend / Bin gleich zurück / Beschäftigt / Nicht stören |
-| **Aktion bei Zeitplan-Ende** | Status aufheben (echter Status) oder festen Status setzen |
-| **Token-Sensor** | Standard `sensor.presence_token` |
-| **Token-Refresh Shell Command** | Standard `refresh_presence_token` |
+| **Schedule (helper)** | Schedule helper – defines *from/to* (multiple windows) |
+| **Status during the schedule** | Dropdown: Offline / Away / Be right back / Busy / Do not disturb |
+| **Action at schedule end** | Clear the status (real status) or set a fixed status |
+| **Token sensor** | Default `sensor.presence_token` |
+| **Token refresh shell command** | Default `refresh_presence_token` |
 
-> **Klassik oder Blueprint?** Nutze **entweder** die festen Automationen aus
-> `presenceguard/automations_presenceguard.yaml` **oder** die Blueprint-Automation
-> – nicht beides parallel.
+> **Classic or blueprint?** Use **either** the fixed automations from
+> `presenceguard/automations_presenceguard.yaml` **or** the blueprint automation
+> – not both in parallel.
 
 ---
 
-## Dateien
+## Files
 
-| Datei | Zweck |
+| File | Purpose |
 | --- | --- |
-| `presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml` | Blueprint mit UI-Konfiguration |
-| `presenceguard/schedule_helper_presenceguard.yaml` | Beispiel-Zeitplan-Helper |
+| `presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml` | Blueprint with UI configuration |
+| `presenceguard/schedule_helper_presenceguard.yaml` | Example schedule helper |
 | `presenceguard/rest_commands.yaml` | Graph REST Commands |
-| `presenceguard/command_line_presenceguard.yaml` | Token-Sensor |
-| `presenceguard/template_presenceguard.yaml` | Status-Sensor (UI: Token-Daten da?) |
-| `presenceguard/shell_commands.yaml` | Token-Refresh-Aufruf |
-| `presenceguard/automations_presenceguard.yaml` | Klassische Automationen |
-| `presenceguard/entra_app_setup.md` | Entra ID App Registration (beide Wege) |
-| `presenceguard/setup_presenceguard.sh` | Interaktiver Setup-Wizard |
-| `presenceguard/token_setup.sh` / `token_refresh.sh` | Token-Scripte (delegiert, Refresh Token) |
+| `presenceguard/command_line_presenceguard.yaml` | Token sensor |
+| `presenceguard/template_presenceguard.yaml` | Status sensor (UI: token data present?) |
+| `presenceguard/shell_commands.yaml` | Token refresh call |
+| `presenceguard/automations_presenceguard.yaml` | Classic automations |
+| `presenceguard/entra_app_setup.md` | Entra ID App Registration (both ways) |
+| `presenceguard/setup_presenceguard.sh` | Interactive setup wizard |
+| `presenceguard/token_setup.sh` / `token_refresh.sh` | Token scripts (delegated, refresh token) |
 
-Entwicklungshinweise: [`CLAUDE.md`](CLAUDE.md).
+Development notes: [`CLAUDE.md`](CLAUDE.md).
 
 ## License
 

@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator – hält Token gültig und erkennt Reauth-Bedarf."""
+"""DataUpdateCoordinator – keeps the token valid and detects when reauth is needed."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class PresenceCoordinator(DataUpdateCoordinator[dict]):
-    """Pollt regelmäßig /me/presence; schlägt der Token fehl -> Reauth."""
+    """Polls /me/presence regularly; if the token fails -> reauth."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, api: GraphApi) -> None:
         super().__init__(
@@ -33,7 +33,7 @@ class PresenceCoordinator(DataUpdateCoordinator[dict]):
         try:
             return await self.api.async_get_presence()
         except AuthError as err:
-            # Löst automatisch den Reauth-Flow aus (erscheint in Reparaturen).
-            raise ConfigEntryAuthFailed("Token abgelaufen – erneute Anmeldung nötig") from err
+            # Automatically triggers the reauth flow (appears in Repairs).
+            raise ConfigEntryAuthFailed("Token expired – sign-in required again") from err
         except Exception as err:  # noqa: BLE001
             raise UpdateFailed(str(err)) from err

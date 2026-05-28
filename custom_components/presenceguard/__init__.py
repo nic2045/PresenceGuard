@@ -1,4 +1,4 @@
-"""PresenceGuard – Microsoft Teams Presence über Home Assistant."""
+"""PresenceGuard – Microsoft Teams presence via Home Assistant."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ SET_PRESENCE_SCHEMA = vol.Schema(
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Eintrag einrichten: OAuth-Session, API, Coordinator, Services."""
+    """Set up the entry: OAuth session, API, coordinator, services."""
     implementation = (
         await config_entry_oauth2_flow.async_get_config_entry_implementation(hass, entry)
     )
@@ -48,7 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Eintrag entladen."""
+    """Unload the entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
@@ -59,14 +59,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 def _async_register_services(hass: HomeAssistant) -> None:
-    """Services registrieren (einmalig)."""
+    """Register services (once)."""
     if hass.services.has_service(DOMAIN, SERVICE_SET_OFFLINE):
         return
 
     def _first_api() -> GraphApi:
         coordinators = list(hass.data.get(DOMAIN, {}).values())
         if not coordinators:
-            raise ConfigEntryNotReady("PresenceGuard nicht eingerichtet")
+            raise ConfigEntryNotReady("PresenceGuard not set up")
         return coordinators[0].api
 
     async def _handle(call: ServiceCall) -> None:
@@ -81,11 +81,11 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 activity = call.data.get("activity") or PRESENCE_OPTIONS[availability]
                 await api.async_set_preferred_presence(availability, activity)
         except AuthError as err:
-            # Reauth anstoßen (Reparaturen-Karte) und Fehler melden.
+            # Trigger reauth (Repairs card) and report the error.
             for coordinator in hass.data.get(DOMAIN, {}).values():
                 coordinator.config_entry.async_start_reauth(hass)
             raise HomeAssistantError(
-                "PresenceGuard: Anmeldung abgelaufen – bitte in Reparaturen neu anmelden."
+                "PresenceGuard: sign-in expired – please sign in again in Repairs."
             ) from err
 
     hass.services.async_register(DOMAIN, SERVICE_SET_OFFLINE, _handle)

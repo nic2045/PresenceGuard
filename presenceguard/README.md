@@ -1,145 +1,151 @@
 # PresenceGuard
 
-Automatisches Setzen des **Microsoft Teams Presence-Status** über
-**Home Assistant** + **Microsoft Graph API** – ganz ohne Premium, Power
-Automate, Node.js oder Python-Daemon. Nur `bash`, `curl` und natives
-HA-YAML.
+Automatically set your **Microsoft Teams presence status** via
+**Home Assistant** + **Microsoft Graph API** – entirely without Premium, Power
+Automate, Node.js or a Python daemon. Just `bash`, `curl` and native
+HA YAML.
 
-## Was es macht
+> **Prefer UI-native?** There is also a **custom integration** with
+> OAuth login directly in Home Assistant and automatic reauth in *Repairs*
+> (no `token_setup.sh`/`secrets.yaml`):
+> [`../custom_components/presenceguard/README.md`](../custom_components/presenceguard/README.md).
+> This guide describes the **classic** YAML/bash approach.
 
-| Zeit | Aktion | Teams zeigt |
+## What it does
+
+| Time | Action | Teams shows |
 | --- | --- | --- |
-| Mo–Fr **17:00** | `setUserPreferredPresence` (Offline/OffWork) | **Offline** |
-| Mo–Fr **09:00** | `clearUserPreferredPresence` | echter Status |
-| **Sa 00:00** | `setUserPreferredPresence` (Offline/OffWork) | **Offline** |
-| **So** | – (bleibt automatisch Offline bis Mo 09:00) | **Offline** |
+| Mon–Fri **17:00** | `setUserPreferredPresence` (Offline/OffWork) | **Offline** |
+| Mon–Fri **09:00** | `clearUserPreferredPresence` | real status |
+| **Sat 00:00** | `setUserPreferredPresence` (Offline/OffWork) | **Offline** |
+| **Sun** | – (stays Offline automatically until Mon 09:00) | **Offline** |
 
-Der Access Token wird alle 30 Minuten (und beim HA-Start) automatisch über den
-Refresh Token erneuert (delegiert, `Presence.ReadWrite`).
+The access token is renewed automatically every 30 minutes (and at HA startup)
+via the refresh token (delegated, `Presence.ReadWrite`).
 
 ---
 
-## Warum `setUserPreferredPresence` statt `setPresence`?
+## Why `setUserPreferredPresence` instead of `setPresence`?
 
-Die naheliegende Lösung wäre `presence/setPresence`. Laut Microsoft-Doku
-funktioniert das für diesen Zweck aber **nicht** zuverlässig:
+The obvious solution would be `presence/setPresence`. According to the Microsoft
+documentation, however, this does **not** work reliably for this purpose:
 
-1. **`Offline` ist keine gültige `setPresence`-Kombination.** `setPresence`
-   unterstützt nur `Available/Available`, `Busy/InACall`,
+1. **`Offline` is not a valid `setPresence` combination.** `setPresence`
+   only supports `Available/Available`, `Busy/InACall`,
    `Busy/InAConferenceCall`, `Away/Away`, `DoNotDisturb/Presenting`.
-2. **App-Sessions werden vom Teams-Client überstimmt.** Läuft Teams parallel,
-   gewinnt dessen „Available"-Session gegen eine App-Session.
-3. **`sessionId` muss die Application-ID sein** – ein frei gewählter Wert wie
-   `"presenceguard"` wird von Graph nicht akzeptiert.
+2. **App sessions are overridden by the Teams client.** If Teams is running in
+   parallel, its "Available" session wins against an app session.
+3. **`sessionId` must be the application ID** – an arbitrary value like
+   `"presenceguard"` is not accepted by Graph.
 
-`setUserPreferredPresence` (`Offline`/`OffWork`) setzt dagegen den
-**bevorzugten** Status, der den tatsächlichen Teams-Status **überschreibt** –
-genau das gewünschte „erscheint offline". `clearUserPreferredPresence` hebt
-das wieder auf. Beide brauchen die delegierte Berechtigung `Presence.ReadWrite`
-(siehe [`entra_app_setup.md`](entra_app_setup.md)).
+`setUserPreferredPresence` (`Offline`/`OffWork`), on the other hand, sets the
+**preferred** status, which **overrides** the actual Teams status –
+exactly the desired "appears offline". `clearUserPreferredPresence` reverts
+that again. Both require the delegated permission `Presence.ReadWrite`
+(see [`entra_app_setup.md`](entra_app_setup.md)).
 
-> Hinweis: Der bevorzugte Status wirkt nur, solange mindestens eine
-> Presence-Session existiert (z. B. Teams-Client angemeldet). Ohne Session ist
-> der Nutzer ohnehin Offline – das gewünschte Ergebnis tritt also in beiden
-> Fällen ein.
+> Note: The preferred status only takes effect as long as at least one
+> presence session exists (e.g. the Teams client is signed in). Without a session
+> the user is offline anyway – so the desired result occurs in both
+> cases.
 
 ---
 
-## Dateien
+## Files
 
-| Datei | Zweck |
+| File | Purpose |
 | --- | --- |
-| `entra_app_setup.md` | App Registration in Entra ID (beide Auth-Wege) |
-| `setup_presenceguard.sh` | **Interaktiver Setup-Wizard** – führt durch die komplette Einrichtung |
-| `token_setup.sh` | Einmaliger Token-Grab via Authorization Code + PKCE → Refresh Token |
-| `token_refresh.sh` | Erneuert das Access Token via Refresh Token; ermittelt die user_id automatisch (/me) |
-| `secrets.yaml` | Vorlage mit Platzhaltern für `/config/secrets.yaml` |
-| `rest_commands.yaml` | `set_teams_offline` + `clear_teams_presence` + parametrierbar `set_teams_presence` |
-| `command_line_presenceguard.yaml` | Token-Sensor (umgeht das 255-Zeichen-State-Limit) |
-| `template_presenceguard.yaml` | **Status-Sensor** `binary_sensor.presenceguard_token` – zeigt in der UI, ob Token-Daten da sind |
-| `shell_commands.yaml` | Aufruf von `token_refresh.sh` |
-| `automations_presenceguard.yaml` | Die 4 fest verdrahteten Automationen (Klassik) |
-| `blueprints/automation/presenceguard/presence_schedule.yaml` | **Blueprint** mit UI-Konfiguration (Zeitplan-Helper + Status-Dropdown) |
-| `schedule_helper_presenceguard.yaml` | Beispiel-Zeitplan-Helper (mehrere Von/Bis-Fenster) |
+| `entra_app_setup.md` | App registration in Entra ID (both auth approaches) |
+| `setup_presenceguard.sh` | **Interactive setup wizard** – walks you through the complete setup |
+| `token_setup.sh` | One-time token grab via authorization code + PKCE → refresh token |
+| `token_refresh.sh` | Renews the access token via the refresh token; determines the user_id automatically (/me) |
+| `secrets.yaml` | Template with placeholders for `/config/secrets.yaml` |
+| `rest_commands.yaml` | `set_teams_offline` + `clear_teams_presence` + parameterizable `set_teams_presence` |
+| `command_line_presenceguard.yaml` | Token sensor (works around the 255-character state limit) |
+| `template_presenceguard.yaml` | **Status sensor** `binary_sensor.presenceguard_token` – shows in the UI whether token data is present |
+| `shell_commands.yaml` | Calls `token_refresh.sh` |
+| `automations_presenceguard.yaml` | The 4 hard-wired automations (classic) |
+| `blueprints/automation/presenceguard/presence_schedule.yaml` | **Blueprint** with UI configuration (schedule helper + status dropdown) |
+| `schedule_helper_presenceguard.yaml` | Example schedule helper (multiple from/to windows) |
 
 ---
 
-## Schnellstart per Wizard (empfohlen)
+## Quick start via wizard (recommended)
 
-Statt der manuellen Schritte unten kannst du den interaktiven Assistenten nutzen.
-Lege zuerst die App Registration an ([`entra_app_setup.md`](entra_app_setup.md)),
-dann:
+Instead of the manual steps below, you can use the interactive wizard.
+First create the app registration ([`entra_app_setup.md`](entra_app_setup.md)),
+then:
 
 ```bash
 cd presenceguard
 ./setup_presenceguard.sh
 ```
 
-Der Wizard fragt `client_id` / `tenant_id` / `user_id` ab, lässt dich den
-Auth-Weg wählen, holt bei Bedarf den Refresh Token, schreibt `secrets.yaml`
-(mit Backup), kopiert die Dateien nach `<config>/presenceguard/`, zeigt den
-`configuration.yaml`-Block und testet auf Wunsch den Token-Abruf. Danach nur
-noch HA neu starten.
+The wizard asks for `client_id` / `tenant_id` / `user_id`, lets you choose the
+auth approach, fetches the refresh token if needed, writes `secrets.yaml`
+(with a backup), copies the files to `<config>/presenceguard/`, shows the
+`configuration.yaml` block and, if desired, tests the token retrieval. After that
+you only need to restart HA.
 
-> Am einfachsten direkt auf dem HA-Host ausführen (Zugriff auf `/config`).
-> Für den delegierten Weg (Browser-Login) kannst du den Token-Schritt auch
-> lokal erledigen und den Wert später einfügen.
+> It is easiest to run this directly on the HA host (access to `/config`).
+> For the delegated approach (browser login) you can also do the token step
+> locally and paste the value in later.
 
 ---
 
-## Setup end-to-end (manuell)
+## Setup end-to-end (manual)
 
 ### 1. Entra ID App Registration
-Folge [`entra_app_setup.md`](entra_app_setup.md). Ergebnis: `client_id`,
-`tenant_id` (und optional ein `client_secret`, falls Confidential Client).
-Berechtigung: delegiert **`Presence.ReadWrite`** (kein Admin nötig, steuert nur
-dein eigenes Konto).
+Follow [`entra_app_setup.md`](entra_app_setup.md). Result: `client_id`,
+`tenant_id` (and optionally a `client_secret`, if confidential client).
+Permission: delegated **`Presence.ReadWrite`** (no admin needed, controls only
+your own account).
 
-### 2. Refresh Token holen (einmalig, lokal)
-Auf einem Rechner **mit Browser** ausführen (Authorization Code Flow + PKCE):
+### 2. Get the refresh token (one-time, local)
+Run on a machine **with a browser** (authorization code flow + PKCE):
 ```bash
-TENANT_ID=<deine-tenant-id> CLIENT_ID=<deine-client-id> ./token_setup.sh
+TENANT_ID=<your-tenant-id> CLIENT_ID=<your-client-id> ./token_setup.sh
 ```
-Das Script öffnet (bzw. zeigt) eine Anmelde-URL. Melde dich mit dem
-Microsoft-365-Konto an und bestätige `Presence.ReadWrite`. Der Browser leitet
-auf `http://localhost:8400` zurück; das Script fängt den Code automatisch ab
-(via `python3`) oder du fügst die zurückgeleitete URL einmal manuell ein. Am
-Ende gibt es `presence_refresh_token: "..."` aus.
+The script opens (or shows) a sign-in URL. Sign in with the
+Microsoft 365 account and confirm `Presence.ReadWrite`. The browser redirects
+back to `http://localhost:8400`; the script catches the code automatically
+(via `python3`) or you paste the redirected URL in manually once. At
+the end it outputs `presence_refresh_token: "..."`.
 
-> Voraussetzungen: `bash`, `curl`, `openssl`; `python3`/`jq` optional. Die
-> Redirect-URI `http://localhost` muss registriert sein. Anderer Port?
-> `REDIRECT_PORT=...` voranstellen.
+> Prerequisites: `bash`, `curl`, `openssl`; `python3`/`jq` optional. The
+> redirect URI `http://localhost` must be registered. Different port?
+> Prefix with `REDIRECT_PORT=...`.
 
-### 3. Dateien auf den HA-Host kopieren
-Lege die YAML-Dateien **und** das Script `token_refresh.sh` im Verzeichnis
-`/config/presenceguard/` ab. Das Script wird per `shell_command` aufgerufen und
-läuft im Home-Assistant-Core-Container (`bash` + `curl` sind dort vorhanden) –
-es muss **ausführbar** sein:
+### 3. Copy the files to the HA host
+Place the YAML files **and** the script `token_refresh.sh` in the directory
+`/config/presenceguard/`. The script is called via `shell_command` and
+runs in the Home Assistant Core container (`bash` + `curl` are present there) –
+it must be **executable**:
 ```bash
 mkdir -p /config/presenceguard
-# token_refresh.sh hierher kopieren:
+# copy token_refresh.sh here:
 cp token_refresh.sh /config/presenceguard/
 chmod +x /config/presenceguard/token_refresh.sh
 ```
 
-So bindet `shell_commands.yaml` das Script ein – der Pfad ist fest auf
-`/config/presenceguard/token_refresh.sh` verdrahtet:
+This is how `shell_commands.yaml` wires the script in – the path is hard-wired to
+`/config/presenceguard/token_refresh.sh`:
 ```yaml
 # shell_commands.yaml
 refresh_presence_token: "bash /config/presenceguard/token_refresh.sh"
 ```
-Legst du das Script woanders ab, passe diesen Pfad entsprechend an. Der
-`shell_command`-Key (`refresh_presence_token`) ist genau der Wert, den das
-Blueprint unter **Token-Refresh Shell Command** erwartet.
+If you place the script elsewhere, adjust this path accordingly. The
+`shell_command` key (`refresh_presence_token`) is exactly the value the
+blueprint expects under **Token refresh shell command**.
 
-### 4. Secrets eintragen
-Übernimm die Keys aus [`secrets.yaml`](secrets.yaml) in deine
-`/config/secrets.yaml`: `presence_client_id`, `presence_tenant_id` und
-`presence_refresh_token` (aus Schritt 2). `presence_user_id` kann **leer**
-bleiben (wird automatisch ermittelt), `presence_client_secret` nur bei
-Confidential Client.
+### 4. Enter secrets
+Copy the keys from [`secrets.yaml`](secrets.yaml) into your
+`/config/secrets.yaml`: `presence_client_id`, `presence_tenant_id` and
+`presence_refresh_token` (from step 2). `presence_user_id` can stay **empty**
+(it is determined automatically), `presence_client_secret` only for a
+confidential client.
 
-### 5. configuration.yaml ergänzen
+### 5. Extend configuration.yaml
 ```yaml
 rest_command: !include presenceguard/rest_commands.yaml
 shell_command: !include presenceguard/shell_commands.yaml
@@ -147,154 +153,153 @@ command_line: !include presenceguard/command_line_presenceguard.yaml
 template: !include presenceguard/template_presenceguard.yaml
 automation presenceguard: !include presenceguard/automations_presenceguard.yaml
 ```
-> Lege die YAML-Dateien dazu nach `/config/presenceguard/`.
-> Falls du `command_line:` oder `template:` bereits anderweitig nutzt, führe die
-> Einträge in einer Liste zusammen statt den Key doppelt zu definieren.
-> `template:` ist optional – es liefert nur den Status-Sensor (siehe unten) und
-> ist für die eigentliche Funktion nicht erforderlich.
+> Also place the YAML files in `/config/presenceguard/`.
+> If you already use `command_line:` or `template:` elsewhere, merge the
+> entries into a list instead of defining the key twice.
+> `template:` is optional – it only provides the status sensor (see below) and
+> is not required for the actual function.
 
-### 6. Token initial erzeugen & prüfen
+### 6. Create and check the token initially
 ```bash
 bash /config/presenceguard/token_refresh.sh
-cat /config/presence_token.json   # sollte access_token + user_id enthalten
+cat /config/presence_token.json   # should contain access_token + user_id
 ```
 
-### 7. HA neu laden / neu starten
-**Developer Tools → YAML → Check Configuration**, dann
-**Restart**. Danach existiert `sensor.presence_token` und die Automationen
-sind aktiv.
+### 7. Reload / restart HA
+**Developer Tools → YAML → Check Configuration**, then
+**Restart**. After that `sensor.presence_token` exists and the automations
+are active.
 
-### 8. Testen
+### 8. Test
 **Developer Tools → Actions**:
-- `rest_command.set_teams_offline` ausführen → Teams sollte **Offline** zeigen.
-- `rest_command.clear_teams_presence` ausführen → echter Status kehrt zurück.
+- Run `rest_command.set_teams_offline` → Teams should show **Offline**.
+- Run `rest_command.clear_teams_presence` → the real status returns.
 
 ---
 
-## Status im UI prüfen
+## Check the status in the UI
 
-Ob die Token-Daten (`access_token` + `user_id`) tatsächlich vorhanden sind –
-also die Voraussetzung für REST Commands und Blueprint erfüllt ist – siehst du
-ohne Developer-Tools direkt in der Oberfläche, sofern `template:` eingebunden
-ist (Schritt 5):
+Whether the token data (`access_token` + `user_id`) is actually present –
+i.e. the prerequisite for REST commands and blueprint is met – you can see
+without Developer Tools directly in the interface, provided `template:` is
+included (step 5):
 
 **`binary_sensor.presenceguard_token`** (device_class `connectivity`):
 
-| Zustand | Bedeutung |
+| State | Meaning |
 | --- | --- |
-| **Verbunden** (`on`) | `access_token` **und** `user_id` vorhanden – alles bereit. |
-| **Getrennt** (`off`) | Daten fehlen → `shell_command.refresh_presence_token` ausführen bzw. `token_refresh.sh` prüfen. |
+| **Connected** (`on`) | `access_token` **and** `user_id` present – everything ready. |
+| **Disconnected** (`off`) | Data missing → run `shell_command.refresh_presence_token` or check `token_refresh.sh`. |
 
-Attribute des Sensors:
+Attributes of the sensor:
 
-| Attribut | Inhalt |
+| Attribute | Content |
 | --- | --- |
-| `user_id` | Die hinterlegte User-ID (GUID/UPN). |
-| `token_age_minutes` | Alter des Tokens in Minuten (Refresh läuft alle ~30 Min). |
-| `last_refresh` | Zeitpunkt des letzten erfolgreichen Refresh (`nie`, falls noch keiner). |
+| `user_id` | The stored user ID (GUID/UPN). |
+| `token_age_minutes` | Age of the token in minutes (refresh runs every ~30 min). |
+| `last_refresh` | Time of the last successful refresh (`never`, if none yet). |
 
-Auf ein Dashboard ziehst du den Sensor als **Entität**- oder
-**Glance**-Karte. Steht er dauerhaft auf *Getrennt* oder steigt
-`token_age_minutes` über ~60, läuft der Refresh nicht – siehe Troubleshooting.
+Add the sensor to a dashboard as an **Entity** or
+**Glance** card. If it stays on *Disconnected* permanently or
+`token_age_minutes` rises above ~60, the refresh is not running – see troubleshooting.
 
-> Hinweis: `sensor.presence_token` existiert dank des robusten `command_line`-
-> Kommandos auch **vor** dem ersten Token-Refresh (dann ohne Attribute, der
-> Status-Sensor steht auf *Getrennt*). Er wird also nicht „unavailable".
+> Note: `sensor.presence_token` exists thanks to the robust `command_line`
+> command even **before** the first token refresh (then without attributes, the
+> status sensor is on *Disconnected*). So it does not become "unavailable".
 
 ---
 
-## Konfiguration per UI (Blueprint)
+## Configuration via UI (blueprint)
 
-Statt der fest verdrahteten Automationen in `automations_presenceguard.yaml`
-kannst du die Zeiten und den Status komfortabel über die HA-Oberfläche
-einstellen – mit einem **Zeitplan-Helper** (Von/Bis, beliebig viele Fenster)
-und einem **Status-Dropdown**.
+Instead of the hard-wired automations in `automations_presenceguard.yaml`,
+you can conveniently set the times and the status via the HA interface –
+with a **schedule helper** (from/to, any number of windows)
+and a **status dropdown**.
 
-### a) Parametrierbaren REST Command bereitstellen
-Stelle sicher, dass `rest_commands.yaml` (inkl. `set_teams_presence`) wie in
-Schritt 5 eingebunden ist.
+### a) Provide the parameterizable REST command
+Make sure `rest_commands.yaml` (incl. `set_teams_presence`) is included as in
+step 5.
 
-### b) Zeitplan-Helper anlegen
-Hier definierst du **über eine Helper-Variable mehrere Zeiten** (Von/Bis pro
-Wochentag). Zwei Wege:
+### b) Create the schedule helper
+Here you define **multiple times via a helper variable** (from/to per
+weekday). Two ways:
 
-- **UI (empfohlen):** Einstellungen → Geräte & Dienste → **Helfer** →
-  *+ Helfer* → **Zeitplan**. Blöcke per Drag & Drop ziehen, mehrere Fenster pro
-  Tag möglich.
-- **YAML:** [`schedule_helper_presenceguard.yaml`](schedule_helper_presenceguard.yaml)
-  einbinden:
+- **UI (recommended):** Settings → Devices & Services → **Helpers** →
+  *+ Helper* → **Schedule**. Drag blocks into place, multiple windows per
+  day are possible.
+- **YAML:** include [`schedule_helper_presenceguard.yaml`](schedule_helper_presenceguard.yaml):
   ```yaml
   schedule: !include presenceguard/schedule_helper_presenceguard.yaml
   ```
 
-Der Helper steht „on", solange die aktuelle Zeit in einem Fenster liegt.
+The helper is "on" as long as the current time falls within a window.
 
-### c) Blueprint importieren
-Kopiere `blueprints/automation/presenceguard/presence_schedule.yaml` nach
-`/config/blueprints/automation/presenceguard/` (oder importiere es über
-Einstellungen → Automationen & Szenen → **Blueprints** → *Blueprint importieren*).
+### c) Import the blueprint
+Copy `blueprints/automation/presenceguard/presence_schedule.yaml` to
+`/config/blueprints/automation/presenceguard/` (or import it via
+Settings → Automations & Scenes → **Blueprints** → *Import blueprint*).
 
-### d) Automation aus dem Blueprint erstellen
-Einstellungen → Automationen & Szenen → **+ Automation** → *Aus Blueprint*.
-Dann konfigurieren:
+### d) Create an automation from the blueprint
+Settings → Automations & Scenes → **+ Automation** → *From blueprint*.
+Then configure:
 
-| Eingabe | Bedeutung |
+| Input | Meaning |
 | --- | --- |
-| **Zeitplan (Helper)** | Der unter b) angelegte Schedule-Helper – legt das *Von/Bis* fest |
-| **Status während des Zeitplans** | Dropdown: Offline / Abwesend / Bin gleich zurück / Beschäftigt / Nicht stören |
-| **Aktion bei Zeitplan-Ende** | Status aufheben (echter Status) oder festen Status setzen |
-| **Token-Sensor** | Standard `sensor.presence_token` |
-| **Token-Refresh Shell Command** | Standard `refresh_presence_token` |
-| **Token-Status-Sensor (für Warnung)** | Standard `binary_sensor.presenceguard_token` |
-| **Warnen ab Token-Alter (Minuten)** | Über diesem Alter gilt der Refresh als hängend (Standard 90) |
-| **Warnen bei Status Getrennt ab (Minuten)** | „Getrennt"-Dauer bis zur Warnung (Standard 15) |
-| **Link zum Erneuern** | URL, die in der Warnmeldung als *Jetzt erneuern* verlinkt wird |
-| **Zusätzliche Benachrichtigung (optional)** | z. B. Push via `notify.mobile_app_…`; leer = nur UI-Meldung |
+| **Schedule (helper)** | The schedule helper created in b) – defines the *from/to* |
+| **Status during the schedule** | Dropdown: Offline / Away / Be right back / Busy / Do not disturb |
+| **Action at schedule end** | Clear the status (real status) or set a fixed status |
+| **Token sensor** | Default `sensor.presence_token` |
+| **Token refresh shell command** | Default `refresh_presence_token` |
+| **Token status sensor (for warning)** | Default `binary_sensor.presenceguard_token` |
+| **Warn above token age (minutes)** | Above this age the refresh is considered stuck (default 90) |
+| **Warn on Disconnected status after (minutes)** | "Disconnected" duration before the warning (default 15) |
+| **Link to renew** | URL linked as *Renew now* in the warning message |
+| **Additional notification (optional)** | e.g. push via `notify.mobile_app_…`; empty = UI message only |
 
-Die Blueprint-Automation frischt vor jedem Graph-Aufruf den Token auf, setzt
-zum Fenster-Start den gewählten Status und führt zum Fenster-Ende die gewählte
-End-Aktion aus.
+The blueprint automation refreshes the token before every Graph call, sets
+the chosen status at window start and performs the chosen end action at
+window end.
 
-> **Optionale Token-Warnung:** Wird der Token zu alt (Refresh hängt) oder fehlen
-> die Token-Daten, postet die Automation eine UI-Benachrichtigung mit
-> **Erneuern-Link** (und optional einen Push). So verpasst du die nötige
-> Neu-Anmeldung nicht – besonders bei Conditional-Access „Sign-in frequency".
-> Voraussetzung: `template_presenceguard.yaml` ist eingebunden.
+> **Optional token warning:** If the token becomes too old (refresh stuck) or the
+> token data is missing, the automation posts a UI notification with a
+> **renew link** (and optionally a push). That way you don't miss the necessary
+> re-sign-in – especially with Conditional Access "Sign-in frequency".
+> Prerequisite: `template_presenceguard.yaml` is included.
 
-> **Klassik oder Blueprint?** Nutze **entweder** die festen Automationen aus
-> `automations_presenceguard.yaml` **oder** die Blueprint-Automation – nicht
-> beides parallel, sonst überschreiben sie sich gegenseitig. Die Token-Refresh-
-> Automation (alle 30 Min) bleibt in beiden Fällen sinnvoll aktiv.
+> **Classic or blueprint?** Use **either** the fixed automations from
+> `automations_presenceguard.yaml` **or** the blueprint automation – not
+> both in parallel, otherwise they overwrite each other. The token refresh
+> automation (every 30 min) remains usefully active in both cases.
 
 ---
 
-## Dateien zur Laufzeit (werden automatisch erzeugt)
+## Runtime files (created automatically)
 
-| Pfad | Inhalt |
+| Path | Content |
 | --- | --- |
-| `/config/presence_token.json` | aktueller `access_token` + `user_id` + Zeitstempel |
-| `/config/presence_refresh_token.txt` | rotierter Refresh Token (Vorrang vor secrets.yaml) |
+| `/config/presence_token.json` | current `access_token` + `user_id` + timestamp |
+| `/config/presence_refresh_token.txt` | rotated refresh token (takes precedence over secrets.yaml) |
 
-Beide enthalten Geheimnisse – nicht ins Git committen (in `.gitignore` lassen).
+Both contain secrets – do not commit them to Git (keep them in `.gitignore`).
 
 ---
 
 ## Troubleshooting
 
-| Symptom | Ursache / Fix |
+| Symptom | Cause / fix |
 | --- | --- |
-| `AADSTS7000218` (token_setup.sh) | „Allow public client flows" auf **Yes** stellen (entra_app_setup.md, Abschnitt 2). |
-| Kein `refresh_token` | Scope `offline_access` fehlt oder User-Consent verweigert. |
-| `token_refresh.sh` → „Kein Refresh Token gefunden" | `presence_refresh_token` in `secrets.yaml` befüllen (einmalig `token_setup.sh` ausführen). |
-| REST Command → `401` „Cannot set the presence of another user" | Wird automatisch vermieden – `token_refresh.sh` nutzt die /me-User-ID. Tritt es doch auf: `token_refresh.sh` neu laufen lassen. |
-| REST Command → `401` (sonst) | Token abgelaufen → `shell_command.refresh_presence_token` ausführen; prüfe `access_token`-Attribut am `sensor.presence_token`. |
-| REST Command → `403` | Delegiertes `Presence.ReadWrite` fehlt oder kein Consent. |
-| Status ändert sich nicht | Teams-Client muss angemeldet sein, damit eine Presence-Session existiert. |
-| `sensor.presence_token` hat keine Attribute / `binary_sensor.presenceguard_token` = *Getrennt* | `/config/presence_token.json` fehlt oder ist leer → token_refresh.sh manuell laufen lassen. |
+| `AADSTS7000218` (token_setup.sh) | Set "Allow public client flows" to **Yes** (entra_app_setup.md, section 2). |
+| No `refresh_token` | Scope `offline_access` is missing or user consent was denied. |
+| `token_refresh.sh` → "No refresh token found" | Fill `presence_refresh_token` in `secrets.yaml` (run `token_setup.sh` once). |
+| REST command → `401` "Cannot set the presence of another user" | Avoided automatically – `token_refresh.sh` uses the /me user ID. If it still occurs: re-run `token_refresh.sh`. |
+| REST command → `401` (otherwise) | Token expired → run `shell_command.refresh_presence_token`; check the `access_token` attribute on `sensor.presence_token`. |
+| REST command → `403` | Delegated `Presence.ReadWrite` is missing or there is no consent. |
+| Status does not change | The Teams client must be signed in so that a presence session exists. |
+| `sensor.presence_token` has no attributes / `binary_sensor.presenceguard_token` = *Disconnected* | `/config/presence_token.json` is missing or empty → run token_refresh.sh manually. |
 
 ---
 
-## Kompatibilität
-Getestet für **HA OS** und **HA Supervised**. `shell_command` läuft im
-Home-Assistant-Core-Container; `bash` und `curl` sind dort vorhanden, `jq`
-wird nur genutzt falls verfügbar (sonst portabler Fallback).
+## Compatibility
+Tested for **HA OS** and **HA Supervised**. `shell_command` runs in the
+Home Assistant Core container; `bash` and `curl` are present there, `jq`
+is only used if available (otherwise a portable fallback).
