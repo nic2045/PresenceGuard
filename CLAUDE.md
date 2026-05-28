@@ -51,6 +51,7 @@ Versionsstrings nicht manuell editieren — das übernimmt der Workflow.
 | `presenceguard/rest_commands.yaml` | Graph REST Commands (`set_teams_offline`, `clear_teams_presence`, `set_teams_presence`) |
 | `presenceguard/automations_presenceguard.yaml` | Klassische, fest verdrahtete Automationen |
 | `presenceguard/command_line_presenceguard.yaml` | Token-Sensor |
+| `presenceguard/template_presenceguard.yaml` | Status-Sensor `binary_sensor.presenceguard_token` (UI: Token-Daten vorhanden?) |
 | `presenceguard/shell_commands.yaml` | Token-Refresh-Aufruf |
 
 ## HA Custom Tags

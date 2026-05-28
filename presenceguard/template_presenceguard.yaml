@@ -1,0 +1,47 @@
+# PresenceGuard – Status-Sensor für die UI.
+#
+# Einbinden in configuration.yaml:
+#   template: !include presenceguard/template_presenceguard.yaml
+#
+# Zweck: Auf einen Blick in der Home-Assistant-Oberfläche sehen, ob der
+# Token-Sensor (sensor.presence_token, siehe command_line_presenceguard.yaml)
+# tatsächlich gültige Daten liefert – also access_token UND user_id vorhanden
+# sind. Genau das sind die Voraussetzungen, die die REST Commands und das
+# Blueprint brauchen.
+#
+# binary_sensor.presenceguard_token:
+#   * "on"  (device_class connectivity -> "Verbunden")  = Daten vorhanden
+#   * "off" ("Getrennt")                                 = access_token/user_id
+#                                                           fehlt -> token_refresh.sh
+#                                                           laufen lassen
+# Attribute liefern Token-Alter und Zeitpunkt des letzten Refresh, damit man
+# erkennt, ob der Token frisch gehalten wird (Refresh alle ~30 Min).
+
+- binary_sensor:
+    - name: "PresenceGuard Token"
+      unique_id: presenceguard_token_ready
+      device_class: connectivity
+      icon: >
+        {{ 'mdi:shield-check' if is_state('binary_sensor.presenceguard_token', 'on')
+           else 'mdi:shield-alert' }}
+      state: >
+        {{ state_attr('sensor.presence_token', 'access_token') is string
+           and state_attr('sensor.presence_token', 'access_token') | length > 0
+           and state_attr('sensor.presence_token', 'user_id') is string
+           and state_attr('sensor.presence_token', 'user_id') | length > 0 }}
+      attributes:
+        user_id: "{{ state_attr('sensor.presence_token', 'user_id') }}"
+        token_age_minutes: >
+          {% set ts = states('sensor.presence_token') %}
+          {% if ts not in ['unknown', 'unavailable', ''] and ts | int(0) > 0 %}
+            {{ ((now().timestamp() - ts | int) / 60) | round(0) }}
+          {% else %}
+            unbekannt
+          {% endif %}
+        last_refresh: >
+          {% set ts = states('sensor.presence_token') %}
+          {% if ts not in ['unknown', 'unavailable', ''] and ts | int(0) > 0 %}
+            {{ (ts | int) | timestamp_local }}
+          {% else %}
+            nie
+          {% endif %}
