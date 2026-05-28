@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/nic2045/PresenceGuard/compare/v0.2.3...v0.2.4) (2026-05-28)
+
+
+### Features
+
+* zwei Auth-Wege (delegiert + App-only) mit Auto-Erkennung ([#7](https://github.com/nic2045/PresenceGuard/issues/7)) ([42300a3](https://github.com/nic2045/PresenceGuard/commit/42300a334b47b4f17612eed1394e4c060e9fed24))
+
 ## [0.2.3](https://github.com/nic2045/PresenceGuard/compare/v0.2.2...v0.2.3) (2026-05-28)
 
 
