@@ -84,3 +84,55 @@
     - service: homeassistant.update_entity
       target:
         entity_id: sensor.presence_token
+
+# Warnung, wenn der Token erneuert werden muss. Sinnvoll v. a. beim delegierten
+# Weg mit Conditional-Access "Sign-in frequency" (z. B. 14 Tage): dann laeuft der
+# Refresh Token periodisch ab und du musst token_setup.sh erneut ausfuehren.
+# Triggert, wenn (a) keine Token-Daten mehr da sind oder (b) der Token deutlich
+# zu alt wird (Refresh klemmt). Voraussetzung: template_presenceguard.yaml ist
+# eingebunden (binary_sensor.presenceguard_token).
+# Tipp: persistent_notification durch notify.mobile_app_* ersetzen fuer Push.
+- id: presenceguard_token_alert
+  alias: "PresenceGuard: Warnung - Token erneuern"
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.presenceguard_token
+      to: "off"
+      for: "00:15:00"
+      id: getrennt
+    - platform: numeric_state
+      entity_id: binary_sensor.presenceguard_token
+      attribute: token_age_minutes
+      above: 90
+      for: "00:05:00"
+      id: veraltet
+  action:
+    - service: persistent_notification.create
+      data:
+        notification_id: presenceguard_token_alert
+        title: "PresenceGuard: Token erneuern"
+        message: >
+          PresenceGuard kann den Teams-Status evtl. nicht mehr setzen
+          (Ausloeser: {{ trigger.id }}). Wahrscheinliche Ursache: der Refresh
+          Token ist abgelaufen - z. B. durch eine Conditional-Access
+          "Sign-in frequency"-Policy. Bitte token_setup.sh erneut ausfuehren und
+          presence_refresh_token in secrets.yaml aktualisieren.
+
+# Hebt die Warnung auf, sobald der Token wieder frisch ist.
+- id: presenceguard_token_alert_clear
+  alias: "PresenceGuard: Warnung aufheben (Token frisch)"
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: binary_sensor.presenceguard_token
+      attribute: token_age_minutes
+      below: 60
+  condition:
+    - condition: state
+      entity_id: binary_sensor.presenceguard_token
+      state: "on"
+  action:
+    - service: persistent_notification.dismiss
+      data:
+        notification_id: presenceguard_token_alert

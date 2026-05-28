@@ -58,7 +58,7 @@ das wieder auf. Beide brauchen die delegierte Berechtigung `Presence.ReadWrite`
 | `command_line_presenceguard.yaml` | Token-Sensor (umgeht das 255-Zeichen-State-Limit) |
 | `template_presenceguard.yaml` | **Status-Sensor** `binary_sensor.presenceguard_token` – zeigt in der UI, ob Token-Daten da sind |
 | `shell_commands.yaml` | Aufruf von `token_refresh.sh` |
-| `automations_presenceguard.yaml` | Die 4 fest verdrahteten Automationen (Klassik) |
+| `automations_presenceguard.yaml` | Klassik-Automationen + Token-Refresh + **Token-Warnung** (Notification, wenn der Token erneuert werden muss) |
 | `blueprints/automation/presenceguard/presence_schedule.yaml` | **Blueprint** mit UI-Konfiguration (Zeitplan-Helper + Status-Dropdown) |
 | `schedule_helper_presenceguard.yaml` | Beispiel-Zeitplan-Helper (mehrere Von/Bis-Fenster) |
 
