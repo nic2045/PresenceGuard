@@ -1,0 +1,54 @@
+name: HA YAML Validation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate Home Assistant YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate YAML syntax
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import sys
+
+          import yaml
+
+
+          class Loader(yaml.SafeLoader):
+              pass
+
+          # Home-Assistant-Custom-Tags (!input, !include, !secret, ...) sind kein
+          # Standard-YAML. Für die reine Syntaxprüfung als Pass-through behandeln.
+          def _passthrough(loader, tag_suffix, node):
+              if isinstance(node, yaml.ScalarNode):
+                  return loader.construct_scalar(node)
+              if isinstance(node, yaml.SequenceNode):
+                  return loader.construct_sequence(node)
+              if isinstance(node, yaml.MappingNode):
+                  return loader.construct_mapping(node)
+              return None
+
+          Loader.add_multi_constructor('!', _passthrough)
+
+          files = sorted(glob.glob('presenceguard/**/*.yaml', recursive=True))
+          if not files:
+              print('Keine YAML-Dateien gefunden', file=sys.stderr)
+              sys.exit(1)
+
+          failed = False
+          for path in files:
+              try:
+                  with open(path) as fh:
+                      yaml.load(fh, Loader=Loader)
+                  print(f'OK   {path}')
+              except yaml.YAMLError as exc:
+                  failed = True
+                  print(f'FAIL {path}: {exc}', file=sys.stderr)
+
+          sys.exit(1 if failed else 0)
+          EOF

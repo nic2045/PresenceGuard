@@ -53,10 +53,12 @@ das wieder auf. Beide brauchen dieselbe delegierte Berechtigung
 | `token_setup.sh` | Einmaliger Token-Grab via Device Code Flow → Refresh Token |
 | `token_refresh.sh` | Erneuert den Access Token via Refresh Token (von HA aufgerufen) |
 | `secrets.yaml` | Vorlage mit Platzhaltern für `/config/secrets.yaml` |
-| `rest_commands.yaml` | `set_teams_offline` + `clear_teams_presence` |
+| `rest_commands.yaml` | `set_teams_offline` + `clear_teams_presence` + parametrierbar `set_teams_presence` |
 | `command_line_presenceguard.yaml` | Token-Sensor (umgeht das 255-Zeichen-State-Limit) |
 | `shell_commands.yaml` | Aufruf von `token_refresh.sh` |
-| `automations_presenceguard.yaml` | Die 4 Automationen |
+| `automations_presenceguard.yaml` | Die 4 fest verdrahteten Automationen (Klassik) |
+| `blueprints/automation/presenceguard/presence_schedule.yaml` | **Blueprint** mit UI-Konfiguration (Zeitplan-Helper + Status-Dropdown) |
+| `schedule_helper_presenceguard.yaml` | Beispiel-Zeitplan-Helper (mehrere Von/Bis-Fenster) |
 
 ---
 
@@ -115,6 +117,60 @@ sind aktiv.
 **Developer Tools → Actions**:
 - `rest_command.set_teams_offline` ausführen → Teams sollte **Offline** zeigen.
 - `rest_command.clear_teams_presence` ausführen → echter Status kehrt zurück.
+
+---
+
+## Konfiguration per UI (Blueprint)
+
+Statt der fest verdrahteten Automationen in `automations_presenceguard.yaml`
+kannst du die Zeiten und den Status komfortabel über die HA-Oberfläche
+einstellen – mit einem **Zeitplan-Helper** (Von/Bis, beliebig viele Fenster)
+und einem **Status-Dropdown**.
+
+### a) Parametrierbaren REST Command bereitstellen
+Stelle sicher, dass `rest_commands.yaml` (inkl. `set_teams_presence`) wie in
+Schritt 5 eingebunden ist.
+
+### b) Zeitplan-Helper anlegen
+Hier definierst du **über eine Helper-Variable mehrere Zeiten** (Von/Bis pro
+Wochentag). Zwei Wege:
+
+- **UI (empfohlen):** Einstellungen → Geräte & Dienste → **Helfer** →
+  *+ Helfer* → **Zeitplan**. Blöcke per Drag & Drop ziehen, mehrere Fenster pro
+  Tag möglich.
+- **YAML:** [`schedule_helper_presenceguard.yaml`](schedule_helper_presenceguard.yaml)
+  einbinden:
+  ```yaml
+  schedule: !include presenceguard/schedule_helper_presenceguard.yaml
+  ```
+
+Der Helper steht „on", solange die aktuelle Zeit in einem Fenster liegt.
+
+### c) Blueprint importieren
+Kopiere `blueprints/automation/presenceguard/presence_schedule.yaml` nach
+`/config/blueprints/automation/presenceguard/` (oder importiere es über
+Einstellungen → Automationen & Szenen → **Blueprints** → *Blueprint importieren*).
+
+### d) Automation aus dem Blueprint erstellen
+Einstellungen → Automationen & Szenen → **+ Automation** → *Aus Blueprint*.
+Dann konfigurieren:
+
+| Eingabe | Bedeutung |
+| --- | --- |
+| **Zeitplan (Helper)** | Der unter b) angelegte Schedule-Helper – legt das *Von/Bis* fest |
+| **Status während des Zeitplans** | Dropdown: Offline / Abwesend / Bin gleich zurück / Beschäftigt / Nicht stören |
+| **Aktion bei Zeitplan-Ende** | Status aufheben (echter Status) oder festen Status setzen |
+| **Token-Sensor** | Standard `sensor.presence_token` |
+| **Token-Refresh Shell Command** | Standard `refresh_presence_token` |
+
+Die Blueprint-Automation frischt vor jedem Graph-Aufruf den Token auf, setzt
+zum Fenster-Start den gewählten Status und führt zum Fenster-Ende die gewählte
+End-Aktion aus.
+
+> **Klassik oder Blueprint?** Nutze **entweder** die festen Automationen aus
+> `automations_presenceguard.yaml` **oder** die Blueprint-Automation – nicht
+> beides parallel, sonst überschreiben sie sich gegenseitig. Die Token-Refresh-
+> Automation (alle 30 Min) bleibt in beiden Fällen sinnvoll aktiv.
 
 ---
 

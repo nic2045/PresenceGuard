@@ -1,0 +1,52 @@
+# PresenceGuard – Zeitplan-Helper (schedule)
+#
+# Definiert über eine Helper-Variable MEHRERE Zeitfenster (Von/Bis je
+# Wochentag), in denen der Teams-Status gesetzt werden soll. Dieser Helper
+# wird im Blueprint presence_schedule.yaml als "Zeitplan (Helper)" ausgewählt.
+#
+# Einbinden in configuration.yaml:
+#   schedule: !include presenceguard/schedule_helper_presenceguard.yaml
+#
+# Alternativ (empfohlen) komplett in der UI anlegen:
+#   Einstellungen -> Geräte & Dienste -> Helfer -> + Helfer -> Zeitplan
+#   Dort lassen sich die Blöcke per Drag & Drop ziehen.
+#
+# Beispiel unten bildet die bisherige Logik nach:
+#   Mo-Fr ab 17:00 bis 09:00 (Folgetag) Offline, Wochenende durchgehend.
+# Mehrere Fenster pro Tag sind möglich – einfach weitere from/to-Paare ergänzen.
+
+presenceguard_offline:
+  name: "PresenceGuard Offline-Zeiten"
+  # Jeder Wochentag ist eine Liste aus {from, to}-Blöcken. Der Helper ist "on",
+  # solange die aktuelle Zeit in einem Block liegt -> Blueprint setzt Status.
+  monday:
+    - from: "00:00:00"
+      to: "09:00:00"
+    - from: "17:00:00"
+      to: "24:00:00"
+  tuesday:
+    - from: "00:00:00"
+      to: "09:00:00"
+    - from: "17:00:00"
+      to: "24:00:00"
+  wednesday:
+    - from: "00:00:00"
+      to: "09:00:00"
+    - from: "17:00:00"
+      to: "24:00:00"
+  thursday:
+    - from: "00:00:00"
+      to: "09:00:00"
+    - from: "17:00:00"
+      to: "24:00:00"
+  friday:
+    - from: "00:00:00"
+      to: "09:00:00"
+    - from: "17:00:00"
+      to: "24:00:00"
+  saturday:
+    - from: "00:00:00"
+      to: "24:00:00"
+  sunday:
+    - from: "00:00:00"
+      to: "24:00:00"

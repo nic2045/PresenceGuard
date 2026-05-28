@@ -1,0 +1,138 @@
+blueprint:
+  name: "PresenceGuard – Teams Presence per Zeitplan"
+  description: >
+    Setzt den bevorzugten Microsoft-Teams-Status (setUserPreferredPresence)
+    anhand eines **Zeitplan-Helpers** (schedule). Im Zeitplan definierst du in
+    der Home-Assistant-UI beliebig viele Zeitfenster mit **Von/Bis** pro
+    Wochentag – z. B. Mo–Fr 17:00–09:00 und Sa/So ganztägig.
+
+
+    Während ein Zeitfenster aktiv ist, wird der unten gewählte Status gesetzt
+    (Dropdown). Endet das Fenster, wird wahlweise der bevorzugte Status wieder
+    aufgehoben (echter Teams-Status) oder ein anderer Status gesetzt.
+
+
+    Voraussetzung: rest_commands.yaml (set_teams_presence /
+    clear_teams_presence), shell_commands.yaml und der Token-Sensor sind
+    eingebunden (siehe README).
+  domain: automation
+  author: PresenceGuard
+  input:
+    schedule_helper:
+      name: "Zeitplan (Helper)"
+      description: >
+        Schedule-Helper, der festlegt, WANN der Status gesetzt wird. Lege ihn
+        unter Einstellungen → Geräte & Dienste → Helfer → Zeitplan an und
+        zeichne dort die gewünschten Zeitfenster (Von/Bis, mehrere möglich).
+      selector:
+        entity:
+          filter:
+            - domain: schedule
+
+    presence_status:
+      name: "Status während des Zeitplans"
+      description: "Welcher bevorzugte Status gesetzt wird, solange ein Zeitfenster aktiv ist."
+      default: "Offline|OffWork"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Offline (erscheint abgemeldet)"
+              value: "Offline|OffWork"
+            - label: "Abwesend"
+              value: "Away|Away"
+            - label: "Bin gleich zurück"
+              value: "BeRightBack|BeRightBack"
+            - label: "Beschäftigt"
+              value: "Busy|Busy"
+            - label: "Nicht stören"
+              value: "DoNotDisturb|DoNotDisturb"
+
+    end_action:
+      name: "Aktion bei Zeitplan-Ende"
+      description: >
+        Was passiert, wenn das Zeitfenster endet. „Aufheben" gibt den echten
+        Teams-Status wieder frei (empfohlen). Alternativ kann ein fester Status
+        gesetzt werden.
+      default: "clear"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Bevorzugten Status aufheben (echter Status)"
+              value: "clear"
+            - label: "Verfügbar setzen"
+              value: "Available|Available"
+            - label: "Abwesend setzen"
+              value: "Away|Away"
+
+    token_sensor:
+      name: "Token-Sensor"
+      description: "Sensor mit access_token / user_id (Standard: sensor.presence_token)."
+      default: sensor.presence_token
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+
+    refresh_command:
+      name: "Token-Refresh Shell Command"
+      description: "Shell-Command, der den Access Token erneuert."
+      default: refresh_presence_token
+      selector:
+        text:
+
+mode: queued
+max_exceeded: silent
+
+variables:
+  presence_status: !input presence_status
+  end_action: !input end_action
+  token_sensor: !input token_sensor
+  refresh_command: !input refresh_command
+
+trigger:
+  - platform: state
+    entity_id: !input schedule_helper
+    to: "on"
+    id: window_start
+  - platform: state
+    entity_id: !input schedule_helper
+    to: "off"
+    id: window_end
+
+action:
+  # 1) Token frisch halten, bevor Graph aufgerufen wird.
+  - service: "shell_command.{{ refresh_command }}"
+  - delay: "00:00:03"
+  - service: homeassistant.update_entity
+    target:
+      entity_id: "{{ token_sensor }}"
+  - delay: "00:00:02"
+
+  # 2) Je nach Trigger Status setzen oder Fenster-Ende-Aktion ausführen.
+  - choose:
+      # Zeitfenster beginnt -> gewählten Status setzen.
+      - conditions:
+          - condition: trigger
+            id: window_start
+        sequence:
+          - service: rest_command.set_teams_presence
+            data:
+              availability: "{{ presence_status.split('|')[0] }}"
+              activity: "{{ presence_status.split('|')[1] }}"
+
+      # Zeitfenster endet -> aufheben oder festen Status setzen.
+      - conditions:
+          - condition: trigger
+            id: window_end
+        sequence:
+          - choose:
+              - conditions: "{{ end_action == 'clear' }}"
+                sequence:
+                  - service: rest_command.clear_teams_presence
+            default:
+              - service: rest_command.set_teams_presence
+                data:
+                  availability: "{{ end_action.split('|')[0] }}"
+                  activity: "{{ end_action.split('|')[1] }}"
