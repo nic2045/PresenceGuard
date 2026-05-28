@@ -58,3 +58,14 @@ class GraphApi:
 
     async def async_clear_preferred_presence(self) -> None:
         await self._request("POST", "/me/presence/clearUserPreferredPresence", {})
+
+    async def async_set_status_message(
+        self, content: str, expiry_iso: str | None = None
+    ) -> None:
+        """Set the Teams status message (note). Empty content clears it."""
+        message: dict = {"message": {"content": content, "contentType": "text"}}
+        if expiry_iso:
+            message["expiryDateTime"] = {"dateTime": expiry_iso, "timeZone": "UTC"}
+        await self._request(
+            "POST", "/me/presence/setStatusMessage", {"statusMessage": message}
+        )

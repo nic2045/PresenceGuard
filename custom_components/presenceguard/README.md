@@ -27,12 +27,16 @@ UI-native alternative to the YAML/bash setup: sign in **directly in Home Assista
 
 ## What you get
 
-- `binary_sensor.presenceguard_token` – "Connected" as long as the token is valid
-  (attributes: current availability/activity).
+- `sensor.presenceguard_presence` – the live Teams availability
+  (Available/Busy/Away/DoNotDisturb/Offline…) with a status-dependent icon;
+  attribute `activity`.
+- `binary_sensor.presenceguard_token` – "Connected" as long as the token is valid.
 - Services:
   - `presenceguard.set_offline` – set Offline (OffWork)
   - `presenceguard.clear_presence` – clear the preferred status
   - `presenceguard.set_presence` – set `availability` (+ optional `activity`)
+  - `presenceguard.set_status_message` – set the Teams status message (note),
+    optional `expiry_minutes`; empty message clears it
 
 These services can be used in automations/blueprints exactly like the previous
 `rest_command.*`.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -20,11 +22,19 @@ PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 SERVICE_SET_OFFLINE = "set_offline"
 SERVICE_CLEAR = "clear_presence"
 SERVICE_SET_PRESENCE = "set_presence"
+SERVICE_SET_STATUS_MESSAGE = "set_status_message"
 
 SET_PRESENCE_SCHEMA = vol.Schema(
     {
         vol.Required("availability"): vol.In(list(PRESENCE_OPTIONS)),
         vol.Optional("activity"): cv.string,
+    }
+)
+
+SET_STATUS_MESSAGE_SCHEMA = vol.Schema(
+    {
+        vol.Required("message"): cv.string,
+        vol.Optional("expiry_minutes"): vol.All(vol.Coerce(int), vol.Range(min=0)),
     }
 )
 
@@ -53,7 +63,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
         if not hass.data[DOMAIN]:
-            for svc in (SERVICE_SET_OFFLINE, SERVICE_CLEAR, SERVICE_SET_PRESENCE):
+            for svc in (
+                SERVICE_SET_OFFLINE,
+                SERVICE_CLEAR,
+                SERVICE_SET_PRESENCE,
+                SERVICE_SET_STATUS_MESSAGE,
+            ):
                 hass.services.async_remove(DOMAIN, svc)
     return unload_ok
 
@@ -80,6 +95,14 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 availability = call.data["availability"]
                 activity = call.data.get("activity") or PRESENCE_OPTIONS[availability]
                 await api.async_set_preferred_presence(availability, activity)
+            elif call.service == SERVICE_SET_STATUS_MESSAGE:
+                expiry_iso = None
+                minutes = call.data.get("expiry_minutes")
+                if minutes:
+                    expiry_iso = (
+                        datetime.now(timezone.utc) + timedelta(minutes=minutes)
+                    ).strftime("%Y-%m-%dT%H:%M:%S")
+                await api.async_set_status_message(call.data["message"], expiry_iso)
         except AuthError as err:
             # Trigger reauth (Repairs card) and report the error.
             for coordinator in hass.data.get(DOMAIN, {}).values():
@@ -92,4 +115,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, SERVICE_CLEAR, _handle)
     hass.services.async_register(
         DOMAIN, SERVICE_SET_PRESENCE, _handle, schema=SET_PRESENCE_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_SET_STATUS_MESSAGE, _handle, schema=SET_STATUS_MESSAGE_SCHEMA
     )

@@ -34,3 +34,27 @@ set_presence:
       example: InAMeeting
       selector:
         text:
+
+set_status_message:
+  name: Set status message
+  description: >
+    Sets the Teams status message (the free-text note). An empty message clears it.
+  fields:
+    message:
+      name: Message
+      description: The status message text. Leave empty to clear it.
+      required: true
+      example: "In a meeting until 3pm"
+      selector:
+        text:
+    expiry_minutes:
+      name: Expiry (minutes)
+      description: Optional – clear the message automatically after this many minutes.
+      required: false
+      example: 120
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: min
+          mode: box

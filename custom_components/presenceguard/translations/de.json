@@ -50,6 +50,20 @@
           "description": "Optionale Aktivität (Standard passend zur Verfügbarkeit)."
         }
       }
+    },
+    "set_status_message": {
+      "name": "Statusmeldung setzen",
+      "description": "Setzt die Teams-Statusmeldung (Notiz). Leere Meldung löscht sie.",
+      "fields": {
+        "message": {
+          "name": "Meldung",
+          "description": "Text der Statusmeldung. Leer lassen = löschen."
+        },
+        "expiry_minutes": {
+          "name": "Ablauf (Minuten)",
+          "description": "Optional – Meldung nach dieser Zeit automatisch entfernen."
+        }
+      }
     }
   }
 }

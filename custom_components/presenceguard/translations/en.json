@@ -50,6 +50,20 @@
           "description": "Optional activity (defaults to match availability)."
         }
       }
+    },
+    "set_status_message": {
+      "name": "Set status message",
+      "description": "Sets the Teams status message (note). An empty message clears it.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "The status message text. Leave empty to clear it."
+        },
+        "expiry_minutes": {
+          "name": "Expiry (minutes)",
+          "description": "Optional – clear the message automatically after this many minutes."
+        }
+      }
     }
   }
 }
