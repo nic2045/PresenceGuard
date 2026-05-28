@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # PresenceGuard – interaktiver Setup-Wizard.
 #
-# Führt durch die komplette Einrichtung statt der manuellen README-Schritte:
-#   1) fragt client_id / tenant_id / user_id ab
-#   2) lässt dich den Auth-Weg wählen (A delegiert / B App-only)
-#   3) holt bei Weg A optional gleich den Refresh Token (token_setup.sh)
-#   4) schreibt die presence_* Keys nach secrets.yaml (mit Backup)
-#   5) kopiert token_refresh.sh nach <config>/presenceguard/ und macht es ausführbar
-#   6) zeigt den configuration.yaml-Block
-#   7) testet auf Wunsch den Token-Abruf
+# Führt durch die komplette Einrichtung statt der manuellen README-Schritte
+# (delegierter Weg, Presence.ReadWrite):
+#   1) fragt client_id / tenant_id ab (user_id wird automatisch ermittelt)
+#   2) holt den Refresh Token (vorhandenen behalten, einfügen oder token_setup.sh)
+#   3) schreibt die presence_* Keys nach secrets.yaml (mit Backup)
+#   4) kopiert token_refresh.sh nach <config>/presenceguard/ und macht es ausführbar
+#   5) zeigt den configuration.yaml-Block
+#   6) testet auf Wunsch den Token-Abruf
 #
 # Werte werden gemerkt: Bei einem erneuten Lauf sind bereits eingetragene Werte
 # (aus secrets.yaml sowie einer kleinen State-Datei ~/.presenceguard_setup)
@@ -19,8 +19,8 @@
 # Wizard, ob du es erneut versuchen willst.
 #
 # Ausführen auf dem HA-Host (Zugriff auf /config) ODER lokal nur für den
-# Token-Grab. Voraussetzungen: bash, curl. Für Weg A zusätzlich openssl
-# (PKCE) und ein Browser; python3/jq sind optional.
+# Token-Grab. Voraussetzungen: bash, curl; für den Token-Grab zusätzlich
+# openssl (PKCE) und ein Browser; python3/jq sind optional.
 
 set -uo pipefail
 
@@ -135,22 +135,13 @@ def_uid="$(read_secret presence_user_id   "$SECRETS_FILE")"; [ -n "$def_uid" ] |
 
 CLIENT_ID="";  while [ -z "$CLIENT_ID" ]; do CLIENT_ID="$(ask "Application (client) ID" "$def_cid")"; require_nonempty "$CLIENT_ID" "client_id" || true; done
 TENANT_ID="";  while [ -z "$TENANT_ID" ]; do TENANT_ID="$(ask "Directory (tenant) ID" "$def_tid")"; require_nonempty "$TENANT_ID" "tenant_id" || true; done
-USER_ID="";    while [ -z "$USER_ID"   ]; do USER_ID="$(ask "User Object ID oder UPN (z. B. du@firma.de)" "$def_uid")"; require_nonempty "$USER_ID" "user_id" || true; done
-
-# --- Auth-Weg (Default aus vorhandenen Secrets ableiten) ---------------------
-hdr "3/6  Auth-Weg wählen"
-def_auth="${ST_AUTH:-A}"
-[ -n "$(read_secret presence_refresh_token "$SECRETS_FILE")" ] && def_auth="A"
-[ -n "$(read_secret presence_client_secret "$SECRETS_FILE")" ] && def_auth="B"
-say "  ${c_bold}A${c_off}  Delegiert – Presence.ReadWrite, KEIN Admin nötig, nur dein Konto."
-say "      (einmaliger Browser-Login, danach Refresh Token)"
-say "  ${c_bold}B${c_off}  App-only  – Presence.ReadWrite.All, Admin-Consent, tenant-weit."
-say "      (kein Login, dafür Client Secret)"
-AUTH="$(ask "Weg A oder B" "$def_auth")"
-AUTH="$(printf '%s' "$AUTH" | tr '[:lower:]' '[:upper:]')"
-
-REFRESH_TOKEN=""
-CLIENT_SECRET=""
+# user_id ist OPTIONAL – token_refresh.sh ermittelt die Object ID des
+# angemeldeten Kontos automatisch via /me. Daher kein Pflicht-Prompt; ein
+# evtl. vorhandener Wert wird übernommen.
+USER_ID="$def_uid"
+# Vorhandenes Client Secret (nur Confidential Client) unverändert behalten.
+CLIENT_SECRET="$(read_secret presence_client_secret "$SECRETS_FILE")"
+AUTH="A"
 
 # token_setup.sh interaktiv ausführen und Refresh Token herauslesen.
 run_token_setup() {
@@ -165,42 +156,24 @@ run_token_setup() {
   [ -n "$REFRESH_TOKEN" ]
 }
 
-case "$AUTH" in
-  A)
-    hdr "Weg A: Refresh Token besorgen"
-    existing_rt="$(read_secret presence_refresh_token "$SECRETS_FILE")"
-    if [ -n "$existing_rt" ] && yesno "Vorhandenen Refresh Token in secrets.yaml behalten?" "J"; then
-      REFRESH_TOKEN="$existing_rt"; ok "Vorhandenen Refresh Token übernommen."
-    elif yesno "Hast du bereits einen Refresh Token zum Einfügen?" "N"; then
-      while [ -z "$REFRESH_TOKEN" ]; do
-        REFRESH_TOKEN="$(ask "Refresh Token einfügen")"
-        [ -n "$REFRESH_TOKEN" ] || warn "Leer – bitte erneut."
-      done
-    else
-      until run_token_setup; do
-        err "Token-Grab fehlgeschlagen."
-        yesno "Erneut versuchen?" "J" || { err "Abgebrochen ohne Refresh Token."; exit 1; }
-      done
-      ok "Refresh Token erhalten."
-    fi
-    ;;
-  B)
-    hdr "Weg B: Client Secret"
-    existing_cs="$(read_secret presence_client_secret "$SECRETS_FILE")"
-    if [ -n "$existing_cs" ] && yesno "Vorhandenes Client Secret in secrets.yaml behalten?" "J"; then
-      CLIENT_SECRET="$existing_cs"; ok "Vorhandenes Client Secret übernommen."
-    else
-      say "${c_dim}Eingabe wird nicht angezeigt.${c_off}"
-      while [ -z "$CLIENT_SECRET" ]; do
-        printf 'Client Secret (Value): ' >&2
-        read -rs CLIENT_SECRET || true; printf '\n' >&2
-        [ -n "$CLIENT_SECRET" ] || warn "Leer – bitte erneut."
-      done
-    fi
-    ;;
-  *)
-    err "Ungültige Auswahl: $AUTH (erwartet A oder B)"; exit 1 ;;
-esac
+# --- Refresh Token (delegiert, Presence.ReadWrite) ---------------------------
+hdr "3/6  Refresh Token besorgen"
+REFRESH_TOKEN=""
+existing_rt="$(read_secret presence_refresh_token "$SECRETS_FILE")"
+if [ -n "$existing_rt" ] && yesno "Vorhandenen Refresh Token in secrets.yaml behalten?" "J"; then
+  REFRESH_TOKEN="$existing_rt"; ok "Vorhandenen Refresh Token übernommen."
+elif yesno "Hast du bereits einen Refresh Token zum Einfügen?" "N"; then
+  while [ -z "$REFRESH_TOKEN" ]; do
+    REFRESH_TOKEN="$(ask "Refresh Token einfügen")"
+    [ -n "$REFRESH_TOKEN" ] || warn "Leer – bitte erneut."
+  done
+else
+  until run_token_setup; do
+    err "Token-Grab fehlgeschlagen."
+    yesno "Erneut versuchen?" "J" || { err "Abgebrochen ohne Refresh Token."; exit 1; }
+  done
+  ok "Refresh Token erhalten."
+fi
 
 # Nicht-geheime Werte merken (für den nächsten Durchlauf).
 save_state

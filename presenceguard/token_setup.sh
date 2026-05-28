@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # PresenceGuard – einmaliger Token-Grab via OAuth2 Authorization Code Flow + PKCE.
 #
-# NUR für den DELEGIERTEN Weg nötig (Presence.ReadWrite, kein Admin-Consent).
-# Beim App-only-Weg (Client Credentials) brauchst du dieses Script NICHT –
-# dort holt token_refresh.sh das Token allein über client_id + client_secret.
+# Holt einmalig einen Refresh Token für die delegierte Berechtigung
+# Presence.ReadWrite (kein Admin-Consent, steuert nur dein eigenes Konto).
 #
 # Dieser Flow ist an die Browser-Session deines Geräts gebunden (Redirect auf
 # localhost) und damit phishing-resistenter als der Device Code Flow. PKCE
