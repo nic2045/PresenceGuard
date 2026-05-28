@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "PresenceGuard – choose Microsoft account"
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate PresenceGuard",
+        "description": "Your Microsoft sign-in has expired (e.g. due to Conditional Access). Sign in again to keep setting your Teams status."
+      }
+    },
+    "abort": {
+      "already_configured": "Account is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
+      "oauth_error": "Received invalid token data.",
+      "oauth_timeout": "Timeout resolving OAuth token.",
+      "oauth_unauthorized": "OAuth authorization error.",
+      "missing_configuration": "The integration is not configured. Add Application Credentials first.",
+      "missing_credentials": "No Application Credentials available.",
+      "authorize_url_timeout": "Timeout generating authorize URL.",
+      "no_url_available": "No URL available.",
+      "user_rejected_authorize": "Authorization was rejected."
+    },
+    "create_entry": {
+      "default": "Successfully authenticated with Microsoft."
+    }
+  },
+  "application_credentials": {
+    "description": "Create an app registration in Entra ID (delegated, permission Presence.ReadWrite). Set the **Web** redirect URI to `{redirect_url}` and enter the Client ID and Client Secret here. Guide: {more_info_url}"
+  },
+  "services": {
+    "set_offline": {
+      "name": "Set offline",
+      "description": "Sets the preferred Teams status to Offline (OffWork)."
+    },
+    "clear_presence": {
+      "name": "Clear status",
+      "description": "Clears the preferred Teams status."
+    },
+    "set_presence": {
+      "name": "Set status",
+      "description": "Sets a preferred Teams status.",
+      "fields": {
+        "availability": {
+          "name": "Availability",
+          "description": "Desired availability."
+        },
+        "activity": {
+          "name": "Activity",
+          "description": "Optional activity (defaults to match availability)."
+        }
+      }
+    }
+  }
+}

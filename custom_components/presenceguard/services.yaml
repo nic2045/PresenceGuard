@@ -1,0 +1,36 @@
+set_offline:
+  name: Offline setzen
+  description: >
+    Setzt den bevorzugten Teams-Status des angemeldeten Kontos auf Offline
+    (OffWork) – erscheint abgemeldet.
+
+clear_presence:
+  name: Status aufheben
+  description: >
+    Hebt den bevorzugten Teams-Status wieder auf (echter Teams-Status gilt).
+
+set_presence:
+  name: Status setzen
+  description: Setzt einen bevorzugten Teams-Status.
+  fields:
+    availability:
+      name: Verfügbarkeit
+      description: Gewünschte Verfügbarkeit.
+      required: true
+      example: Busy
+      selector:
+        select:
+          options:
+            - Offline
+            - Available
+            - Busy
+            - DoNotDisturb
+            - BeRightBack
+            - Away
+    activity:
+      name: Aktivität
+      description: Optionale Aktivität (Standard = passend zur Verfügbarkeit).
+      required: false
+      example: InAMeeting
+      selector:
+        text:

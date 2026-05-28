@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "PresenceGuard – Microsoft-Konto wählen"
+      },
+      "reauth_confirm": {
+        "title": "PresenceGuard erneut anmelden",
+        "description": "Die Anmeldung bei Microsoft ist abgelaufen (z. B. wegen Conditional-Access). Melde dich erneut an, um den Teams-Status weiter setzen zu können."
+      }
+    },
+    "abort": {
+      "already_configured": "Konto ist bereits eingerichtet.",
+      "reauth_successful": "Erneute Anmeldung erfolgreich.",
+      "oauth_error": "Beim Token-Austausch ist ein Fehler aufgetreten.",
+      "oauth_timeout": "Zeitüberschreitung beim Token-Austausch.",
+      "oauth_unauthorized": "OAuth-Autorisierung fehlgeschlagen.",
+      "missing_configuration": "Die Integration ist nicht konfiguriert. Lege zuerst Application Credentials an.",
+      "missing_credentials": "Keine Application Credentials vorhanden.",
+      "authorize_url_timeout": "Zeitüberschreitung beim Erzeugen der Autorisierungs-URL.",
+      "no_url_available": "Keine Autorisierungs-URL verfügbar.",
+      "user_rejected_authorize": "Autorisierung abgebrochen."
+    },
+    "create_entry": {
+      "default": "Erfolgreich bei Microsoft angemeldet."
+    }
+  },
+  "application_credentials": {
+    "description": "Lege in Entra ID eine App Registration an (delegiert, Berechtigung Presence.ReadWrite). Trage als **Web**-Redirect-URI `{redirect_url}` ein und hinterlege hier Client ID und Client Secret. Anleitung: {more_info_url}"
+  },
+  "services": {
+    "set_offline": {
+      "name": "Offline setzen",
+      "description": "Setzt den bevorzugten Teams-Status auf Offline (OffWork)."
+    },
+    "clear_presence": {
+      "name": "Status aufheben",
+      "description": "Hebt den bevorzugten Teams-Status wieder auf."
+    },
+    "set_presence": {
+      "name": "Status setzen",
+      "description": "Setzt einen bevorzugten Teams-Status.",
+      "fields": {
+        "availability": {
+          "name": "Verfügbarkeit",
+          "description": "Gewünschte Verfügbarkeit."
+        },
+        "activity": {
+          "name": "Aktivität",
+          "description": "Optionale Aktivität (Standard passend zur Verfügbarkeit)."
+        }
+      }
+    }
+  }
+}
