@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/nic2045/PresenceGuard/compare/v0.3.1...v0.3.2) (2026-05-28)
+
+
+### Features
+
+* HA Custom-Integration (OAuth-UI-Login + Reauth in Reparaturen) ([#22](https://github.com/nic2045/PresenceGuard/issues/22)) ([ab72f19](https://github.com/nic2045/PresenceGuard/commit/ab72f19e981cb8ef59efb7c31764524f313b6f20))
+
 ## [0.3.1](https://github.com/nic2045/PresenceGuard/compare/v0.3.0...v0.3.1) (2026-05-28)
 
 
