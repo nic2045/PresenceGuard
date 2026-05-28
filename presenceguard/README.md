@@ -55,6 +55,7 @@ das wieder auf. Beide brauchen dieselbe delegierte Berechtigung
 | `secrets.yaml` | Vorlage mit Platzhaltern für `/config/secrets.yaml` |
 | `rest_commands.yaml` | `set_teams_offline` + `clear_teams_presence` + parametrierbar `set_teams_presence` |
 | `command_line_presenceguard.yaml` | Token-Sensor (umgeht das 255-Zeichen-State-Limit) |
+| `template_presenceguard.yaml` | **Status-Sensor** `binary_sensor.presenceguard_token` – zeigt in der UI, ob Token-Daten da sind |
 | `shell_commands.yaml` | Aufruf von `token_refresh.sh` |
 | `automations_presenceguard.yaml` | Die 4 fest verdrahteten Automationen (Klassik) |
 | `blueprints/automation/presenceguard/presence_schedule.yaml` | **Blueprint** mit UI-Konfiguration (Zeitplan-Helper + Status-Dropdown) |
@@ -77,13 +78,27 @@ eingeben, anmelden, Berechtigung bestätigen. Das Script gibt am Ende
 `presence_refresh_token: "..."` aus.
 
 ### 3. Dateien auf den HA-Host kopieren
-Lege die Scripte im Config-Verzeichnis ab und mache sie ausführbar:
+Lege die YAML-Dateien **und** das Script `token_refresh.sh` im Verzeichnis
+`/config/presenceguard/` ab. Das Script wird per `shell_command` aufgerufen und
+läuft im Home-Assistant-Core-Container (`bash` + `curl` sind dort vorhanden) –
+es muss **ausführbar** sein:
 ```bash
 mkdir -p /config/presenceguard
 # token_refresh.sh hierher kopieren:
 cp token_refresh.sh /config/presenceguard/
 chmod +x /config/presenceguard/token_refresh.sh
 ```
+
+So bindet `shell_commands.yaml` das Script ein – der Pfad ist fest auf
+`/config/presenceguard/token_refresh.sh` verdrahtet:
+```yaml
+# shell_commands.yaml
+refresh_presence_token: "bash /config/presenceguard/token_refresh.sh"
+```
+Legst du das Script woanders ab, passe diesen Pfad entsprechend an. Der
+`shell_command`-Key (`refresh_presence_token`) ist genau der Wert, den das
+Blueprint unter **Token-Refresh Shell Command** erwartet.
+
 (`token_setup.sh` muss nicht auf den HA-Host – es ist ein Einmal-Tool.)
 
 ### 4. Secrets eintragen
@@ -96,11 +111,14 @@ chmod +x /config/presenceguard/token_refresh.sh
 rest_command: !include presenceguard/rest_commands.yaml
 shell_command: !include presenceguard/shell_commands.yaml
 command_line: !include presenceguard/command_line_presenceguard.yaml
+template: !include presenceguard/template_presenceguard.yaml
 automation presenceguard: !include presenceguard/automations_presenceguard.yaml
 ```
-> Lege die vier YAML-Dateien dazu nach `/config/presenceguard/`.
-> Falls du `command_line:` bereits anderweitig nutzt, führe die Einträge in
-> einer Liste zusammen statt den Key doppelt zu definieren.
+> Lege die YAML-Dateien dazu nach `/config/presenceguard/`.
+> Falls du `command_line:` oder `template:` bereits anderweitig nutzt, führe die
+> Einträge in einer Liste zusammen statt den Key doppelt zu definieren.
+> `template:` ist optional – es liefert nur den Status-Sensor (siehe unten) und
+> ist für die eigentliche Funktion nicht erforderlich.
 
 ### 6. Token initial erzeugen & prüfen
 ```bash
@@ -117,6 +135,38 @@ sind aktiv.
 **Developer Tools → Actions**:
 - `rest_command.set_teams_offline` ausführen → Teams sollte **Offline** zeigen.
 - `rest_command.clear_teams_presence` ausführen → echter Status kehrt zurück.
+
+---
+
+## Status im UI prüfen
+
+Ob die Token-Daten (`access_token` + `user_id`) tatsächlich vorhanden sind –
+also die Voraussetzung für REST Commands und Blueprint erfüllt ist – siehst du
+ohne Developer-Tools direkt in der Oberfläche, sofern `template:` eingebunden
+ist (Schritt 5):
+
+**`binary_sensor.presenceguard_token`** (device_class `connectivity`):
+
+| Zustand | Bedeutung |
+| --- | --- |
+| **Verbunden** (`on`) | `access_token` **und** `user_id` vorhanden – alles bereit. |
+| **Getrennt** (`off`) | Daten fehlen → `shell_command.refresh_presence_token` ausführen bzw. `token_refresh.sh` prüfen. |
+
+Attribute des Sensors:
+
+| Attribut | Inhalt |
+| --- | --- |
+| `user_id` | Die hinterlegte User-ID (GUID/UPN). |
+| `token_age_minutes` | Alter des Tokens in Minuten (Refresh läuft alle ~30 Min). |
+| `last_refresh` | Zeitpunkt des letzten erfolgreichen Refresh (`nie`, falls noch keiner). |
+
+Auf ein Dashboard ziehst du den Sensor als **Entität**- oder
+**Glance**-Karte. Steht er dauerhaft auf *Getrennt* oder steigt
+`token_age_minutes` über ~60, läuft der Refresh nicht – siehe Troubleshooting.
+
+> Hinweis: `sensor.presence_token` existiert dank des robusten `command_line`-
+> Kommandos auch **vor** dem ersten Token-Refresh (dann ohne Attribute, der
+> Status-Sensor steht auf *Getrennt*). Er wird also nicht „unavailable".
 
 ---
 
@@ -194,7 +244,7 @@ Beide enthalten Geheimnisse – nicht ins Git committen (in `.gitignore` lassen)
 | REST Command → `401` | Token abgelaufen → `shell_command.refresh_presence_token` ausführen; prüfe, ob `sensor.presence_token` ein `access_token`-Attribut hat. |
 | REST Command → `403` | `Presence.ReadWrite` fehlt / kein Consent. |
 | Status ändert sich nicht | Teams-Client muss angemeldet sein, damit eine Presence-Session existiert; `user_id` korrekt (GUID/UPN)? |
-| `sensor.presence_token` ist `unknown` | `/config/presence_token.json` fehlt → token_refresh.sh manuell laufen lassen. |
+| `sensor.presence_token` hat keine Attribute / `binary_sensor.presenceguard_token` = *Getrennt* | `/config/presence_token.json` fehlt oder ist leer → token_refresh.sh manuell laufen lassen. |
 
 ---
 

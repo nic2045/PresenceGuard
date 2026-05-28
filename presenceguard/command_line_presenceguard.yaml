@@ -8,12 +8,18 @@
 # ATTRIBUTE erlaubt. Daher liest dieser Sensor /config/presence_token.json und
 # legt access_token + user_id als Attribute ab; der State ist nur der kurze
 # Zeitstempel. rest_commands.yaml greift via state_attr(...) darauf zu.
+#
+# Robust gegen fehlende Datei: Existiert /config/presence_token.json noch nicht
+# (z. B. vor dem ersten token_refresh.sh-Lauf), liefert das Kommando "{}" statt
+# zu scheitern. So existiert sensor.presence_token IMMER – er hat dann nur keine
+# access_token/user_id-Attribute. binary_sensor.presenceguard_token
+# (template_presenceguard.yaml) wertet das aus und zeigt den Status in der UI.
 
 - sensor:
     name: presence_token
     unique_id: presenceguard_access_token
-    command: "cat /config/presence_token.json"
-    value_template: "{{ value_json.ts }}"
+    command: "cat /config/presence_token.json 2>/dev/null || echo '{}'"
+    value_template: "{{ value_json.ts | default('') }}"
     json_attributes:
       - access_token
       - user_id
