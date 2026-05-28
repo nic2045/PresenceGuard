@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/nic2045/PresenceGuard/compare/v0.2.6...v0.2.7) (2026-05-28)
+
+
+### Features
+
+* Setup-Wizard merkt Werte + wiederholbares Fehlerhandling ([#13](https://github.com/nic2045/PresenceGuard/issues/13)) ([06861f0](https://github.com/nic2045/PresenceGuard/commit/06861f0f57f9180b0cf3cb6dd67d03ec674a2a0b))
+
 ## [0.2.6](https://github.com/nic2045/PresenceGuard/compare/v0.2.5...v0.2.6) (2026-05-28)
 
 
