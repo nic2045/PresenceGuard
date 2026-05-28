@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/nic2045/PresenceGuard/compare/v0.2.1...v0.2.2) (2026-05-28)
+
+
+### Features
+
+* UI-Blueprint + Repo-Struktur/Validierung aus ha-garden-water ([#3](https://github.com/nic2045/PresenceGuard/issues/3)) ([f361bbd](https://github.com/nic2045/PresenceGuard/commit/f361bbd124f88b79362e05d76c880eceac78d029))
+
 ## [0.2.1](https://github.com/nic2045/PresenceGuard/compare/v0.2.0...v0.2.1) (2026-05-28)
 
 
