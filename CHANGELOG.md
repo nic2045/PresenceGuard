@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/nic2045/PresenceGuard/compare/v0.3.4...v0.3.5) (2026-05-28)
+
+
+### Features
+
+* integration-native presence blueprint (presenceguard.* services) ([#29](https://github.com/nic2045/PresenceGuard/issues/29)) ([df2de57](https://github.com/nic2045/PresenceGuard/commit/df2de5751b1c0e97cd91c7dd821cfe49617206f3))
+
 ## [0.3.4](https://github.com/nic2045/PresenceGuard/compare/v0.3.3...v0.3.4) (2026-05-28)
 
 
