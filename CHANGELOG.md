@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/nic2045/PresenceGuard/compare/v0.2.7...v0.3.0) (2026-05-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* user_id automatisch via /me + App-only-Weg entfernen ([#15](https://github.com/nic2045/PresenceGuard/issues/15))
+
+### Features
+
+* user_id automatisch via /me + App-only-Weg entfernen ([#15](https://github.com/nic2045/PresenceGuard/issues/15)) ([e736174](https://github.com/nic2045/PresenceGuard/commit/e736174e3dd000462de093c612f16635216da1f0))
+
 ## [0.2.7](https://github.com/nic2045/PresenceGuard/compare/v0.2.6...v0.2.7) (2026-05-28)
 
 
