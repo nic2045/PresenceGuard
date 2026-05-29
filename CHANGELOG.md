@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.7](https://github.com/nic2045/PresenceGuard/compare/v0.3.6...v0.3.7) (2026-05-29)
+
+
+### Features
+
+* configurable presence poll interval (options flow) ([#34](https://github.com/nic2045/PresenceGuard/issues/34)) ([44e66a7](https://github.com/nic2045/PresenceGuard/commit/44e66a70537f9299ea3669ebce3e35a724fd4ec0))
+
 ## [0.3.6](https://github.com/nic2045/PresenceGuard/compare/v0.3.5...v0.3.6) (2026-05-29)
 
 
