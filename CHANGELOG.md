@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/nic2045/PresenceGuard/compare/v0.3.8...v0.3.9) (2026-05-29)
+
+
+### Features
+
+* ship brand icon in the integration (HA 2026.3 brand/ folder) ([#38](https://github.com/nic2045/PresenceGuard/issues/38)) ([731933f](https://github.com/nic2045/PresenceGuard/commit/731933f7d1c08d100b78b9fc99ba893c1ac7a1a9))
+
 ## [0.3.8](https://github.com/nic2045/PresenceGuard/compare/v0.3.7...v0.3.8) (2026-05-29)
 
 
