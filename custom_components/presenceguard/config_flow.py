@@ -5,10 +5,30 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult
-from homeassistant.helpers import config_entry_oauth2_flow
+import voluptuous as vol
 
-from .const import DOMAIN, SCOPES
+from homeassistant.config_entries import (
+    SOURCE_REAUTH,
+    ConfigEntry,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.core import callback
+from homeassistant.helpers import config_entry_oauth2_flow
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
+
+from .const import (
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
+    SCOPES,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,6 +39,11 @@ class PresenceGuardOAuth2FlowHandler(
     """OAuth2 sign-in in the HA UI incl. reauth (Repairs)."""
 
     DOMAIN = DOMAIN
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        return PresenceGuardOptionsFlow()
 
     @property
     def logger(self) -> logging.Logger:
@@ -51,3 +76,30 @@ class PresenceGuardOAuth2FlowHandler(
             await self.hass.config_entries.async_reload(existing_entry.entry_id)
             return self.async_abort(reason="reauth_successful")
         return self.async_create_entry(title="PresenceGuard (Teams)", data=data)
+
+
+class PresenceGuardOptionsFlow(OptionsFlow):
+    """Configure the presence poll interval (minutes)."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+        current = self.config_entry.options.get(
+            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+        )
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_SCAN_INTERVAL, default=current): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_SCAN_INTERVAL,
+                        max=MAX_SCAN_INTERVAL,
+                        step=1,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                )
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)

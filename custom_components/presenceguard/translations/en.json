@@ -25,6 +25,19 @@
       "default": "Successfully authenticated with Microsoft."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "PresenceGuard options",
+        "data": {
+          "scan_interval": "Poll interval (minutes)"
+        },
+        "data_description": {
+          "scan_interval": "How often the Teams status is polled from Microsoft Graph (1–60 minutes)."
+        }
+      }
+    }
+  },
   "application_credentials": {
     "description": "Create an app registration in Entra ID (delegated, permission Presence.ReadWrite). Set the **Web** redirect URI to `{redirect_url}` and enter the Client ID and Client Secret here. Guide: {more_info_url}"
   },

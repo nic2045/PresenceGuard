@@ -25,6 +25,19 @@
       "default": "Erfolgreich bei Microsoft angemeldet."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "PresenceGuard-Optionen",
+        "data": {
+          "scan_interval": "Abfrageintervall (Minuten)"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft der Teams-Status von Microsoft Graph abgefragt wird (1–60 Minuten)."
+        }
+      }
+    }
+  },
   "application_credentials": {
     "description": "Lege in Entra ID eine App Registration an (delegiert, Berechtigung Presence.ReadWrite). Trage als **Web**-Redirect-URI `{redirect_url}` ein und hinterlege hier Client ID und Client Secret. Anleitung: {more_info_url}"
   },
