@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -25,6 +25,11 @@ PRESENCE_ICONS = {
 }
 
 
+def _is_valid(availability: str | None) -> bool:
+    """A usable presence value (ignore empty / PresenceUnknown)."""
+    return bool(availability) and availability != "PresenceUnknown"
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -37,7 +42,7 @@ async def async_setup_entry(
 class PresenceGuardPresenceSensor(
     CoordinatorEntity[PresenceCoordinator], SensorEntity
 ):
-    """Shows the current Teams availability (state) and activity (attribute)."""
+    """Current Teams availability; keeps the last valid value across hiccups."""
 
     _attr_has_entity_name = True
     _attr_name = "Presence"
@@ -50,20 +55,34 @@ class PresenceGuardPresenceSensor(
             "name": "PresenceGuard",
             "manufacturer": "PresenceGuard",
         }
+        # Seed from the first poll; updated only with valid values afterwards.
+        data = coordinator.data or {}
+        self._last_availability: str | None = data.get("availability")
+        self._last_activity: str | None = data.get("activity")
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        data = self.coordinator.data or {}
+        availability = data.get("availability")
+        # Ignore failed polls / PresenceUnknown -> keep the last known status.
+        if _is_valid(availability):
+            self._last_availability = availability
+            self._last_activity = data.get("activity")
+        super()._handle_coordinator_update()
 
     @property
     def available(self) -> bool:
-        return self.coordinator.last_update_success
+        # Stay available once we have any value; don't drop on transient errors.
+        return self._last_availability is not None
 
     @property
     def native_value(self) -> str | None:
-        # Graph availability, e.g. Available / Busy / Away / DoNotDisturb / Offline.
-        return (self.coordinator.data or {}).get("availability")
+        return self._last_availability
 
     @property
     def icon(self) -> str:
-        return PRESENCE_ICONS.get(self.native_value, "mdi:microsoft-teams")
+        return PRESENCE_ICONS.get(self._last_availability, "mdi:microsoft-teams")
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:
-        return {"activity": (self.coordinator.data or {}).get("activity")}
+        return {"activity": self._last_activity}
