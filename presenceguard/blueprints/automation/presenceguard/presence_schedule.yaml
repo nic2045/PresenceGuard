@@ -1,5 +1,5 @@
 blueprint:
-  name: "PresenceGuard – Teams Presence per Zeitplan (v0.3.7)" # x-release-please-version
+  name: "PresenceGuard – Teams Presence per Zeitplan (v0.3.8)" # x-release-please-version
   description: >
     Setzt den bevorzugten Microsoft-Teams-Status (setUserPreferredPresence)
     anhand eines **Zeitplan-Helpers** (schedule). Im Zeitplan definierst du in

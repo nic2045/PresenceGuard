@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/nic2045/PresenceGuard/compare/v0.3.7...v0.3.8) (2026-05-29)
+
+
+### Bug Fixes
+
+* **brands:** full-bleed trimmed icon ([#36](https://github.com/nic2045/PresenceGuard/issues/36)) ([c18c426](https://github.com/nic2045/PresenceGuard/commit/c18c426cee2a76cfa8f58aacca75c2693128926a))
+
 ## [0.3.7](https://github.com/nic2045/PresenceGuard/compare/v0.3.6...v0.3.7) (2026-05-29)
 
 
