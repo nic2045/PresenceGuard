@@ -11,7 +11,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import AuthError, GraphApi
-from .const import DOMAIN
+from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,11 +20,12 @@ class PresenceCoordinator(DataUpdateCoordinator[dict]):
     """Polls /me/presence regularly; if the token fails -> reauth."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, api: GraphApi) -> None:
+        minutes = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(minutes=10),
+            update_interval=timedelta(minutes=minutes),
             config_entry=entry,
         )
         self.api = api
