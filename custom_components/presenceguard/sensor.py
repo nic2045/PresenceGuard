@@ -6,6 +6,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -40,9 +41,10 @@ async def async_setup_entry(
 
 
 class PresenceGuardPresenceSensor(
-    CoordinatorEntity[PresenceCoordinator], SensorEntity
+    CoordinatorEntity[PresenceCoordinator], RestoreEntity, SensorEntity
 ):
-    """Current Teams availability; keeps the last valid value across hiccups."""
+    """Current Teams availability; keeps the last valid value across hiccups
+    and restores it across Home Assistant restarts."""
 
     _attr_has_entity_name = True
     _attr_name = "Presence"
@@ -59,6 +61,16 @@ class PresenceGuardPresenceSensor(
         data = coordinator.data or {}
         self._last_availability: str | None = data.get("availability")
         self._last_activity: str | None = data.get("activity")
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        # Restore the last value across restarts if the first poll didn't yield
+        # a valid one yet (so we don't show "unknown" until the next poll).
+        if not _is_valid(self._last_availability):
+            last = await self.async_get_last_state()
+            if last and _is_valid(last.state):
+                self._last_availability = last.state
+                self._last_activity = last.attributes.get("activity")
 
     @callback
     def _handle_coordinator_update(self) -> None:
