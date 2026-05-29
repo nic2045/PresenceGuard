@@ -7,7 +7,7 @@ brands/custom_integrations/presenceguard/.
 from PIL import Image, ImageDraw, ImageChops
 
 S = 1024
-OUT = "brands/custom_integrations/presenceguard"
+OUT = "custom_components/presenceguard/brand"
 
 
 def lerp(a, b, t):

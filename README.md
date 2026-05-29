@@ -130,9 +130,8 @@ https://raw.githubusercontent.com/nic2045/PresenceGuard/main/presenceguard/bluep
 
 | Path | Purpose |
 | --- | --- |
-| `custom_components/presenceguard/` | **The integration** (OAuth UI login, reauth in Repairs, presence sensor, services) |
+| `custom_components/presenceguard/` | **The integration** (OAuth UI login, reauth in Repairs, presence sensor, services); ships its own icon in `brand/` |
 | `presenceguard/` | Classic YAML/bash setup (blueprint, REST/shell commands, token scripts) |
-| `brands/` | Icon assets for submission to `home-assistant/brands` |
 
 Development notes: [`CLAUDE.md`](CLAUDE.md).
 
