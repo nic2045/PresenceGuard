@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/nic2045/PresenceGuard/compare/v0.3.10...v0.3.11) (2026-05-29)
+
+
+### Features
+
+* restore presence state across HA restarts ([#43](https://github.com/nic2045/PresenceGuard/issues/43)) ([cb2753e](https://github.com/nic2045/PresenceGuard/commit/cb2753e401363be65b21fb8b841352db4b5ae92c))
+
 ## [0.3.10](https://github.com/nic2045/PresenceGuard/compare/v0.3.9...v0.3.10) (2026-05-29)
 
 
