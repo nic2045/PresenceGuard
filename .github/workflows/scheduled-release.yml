@@ -1,0 +1,55 @@
+name: scheduled-release
+
+# Cuts at most one batched release per day, in the morning, but ONLY if the
+# previous day had more than 10 commits on main. Otherwise it keeps waiting and
+# release-please's rolling release PR just accumulates further.
+
+on:
+  schedule:
+    - cron: "0 5 * * *" # 05:00 UTC (~07:00 CEST)
+  workflow_dispatch: {} # allow manual run
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  MIN_COMMITS: "10"
+
+jobs:
+  daily-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Count yesterday's commits on main
+        id: count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          since="$(date -u -d 'yesterday 00:00:00' +%Y-%m-%dT%H:%M:%SZ)"
+          until="$(date -u -d 'today 00:00:00' +%Y-%m-%dT%H:%M:%SZ)"
+          n="$(gh api "repos/${GITHUB_REPOSITORY}/commits?sha=main&since=${since}&until=${until}&per_page=100" --jq 'length')"
+          echo "Commits yesterday (${since} .. ${until}): ${n}"
+          echo "count=${n}" >> "$GITHUB_OUTPUT"
+
+      - name: Merge the rolling release PR
+        if: ${{ fromJSON(steps.count.outputs.count) > fromJSON(env.MIN_COMMITS) }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr="$(gh pr list --repo "${GITHUB_REPOSITORY}" --state open \
+                 --label 'autorelease: pending' --json number --jq '.[0].number // empty')"
+          if [ -z "$pr" ]; then
+            echo "No pending release PR — nothing to release."
+            exit 0
+          fi
+          echo "Merging release PR #${pr}"
+          gh pr merge "$pr" --repo "${GITHUB_REPOSITORY}" --squash --admin
+
+      # Run release-please here so the tag/release is created in this same run
+      # (a GITHUB_TOKEN merge would not re-trigger the push-based workflow).
+      - name: Create the release (tag)
+        if: ${{ fromJSON(steps.count.outputs.count) > fromJSON(env.MIN_COMMITS) }}
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
