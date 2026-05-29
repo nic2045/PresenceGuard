@@ -26,7 +26,7 @@ def render(size):
         for x in range(S):
             gp[x, y] = (c[0], c[1], c[2], 255)
     tile = Image.new("L", (S, S), 0)
-    m = 0.085 * S
+    m = 0.0  # full-bleed (brands requires trimmed icons)
     ImageDraw.Draw(tile).rounded_rectangle(
         [m, m, S - m, S - m], radius=0.23 * S, fill=255
     )
