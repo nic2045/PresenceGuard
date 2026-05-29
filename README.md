@@ -1,6 +1,6 @@
 # PresenceGuard
 
-![HA Version](https://img.shields.io/badge/Home%20Assistant-2024.6%2B-blue?logo=homeassistant)
+![HA Version](https://img.shields.io/badge/Home%20Assistant-2026.3%2B-blue?logo=homeassistant)
 [![Validate integration (hassfest + HACS)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate-integration.yaml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate-integration.yaml)
 [![HA YAML Validation](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/validate.yaml)
 [![Secret scan: gitleaks](https://github.com/nic2045/PresenceGuard/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/nic2045/PresenceGuard/actions/workflows/gitleaks.yml)

@@ -12,15 +12,11 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - id: release
-        uses: googleapis/release-please-action@v5
+      # Maintains a single rolling release PR. It is NOT auto-merged on purpose:
+      # merge it manually (e.g. once a day) to cut one batched release. Merging
+      # it yourself also triggers the tag/release immediately (no lag, unlike a
+      # GITHUB_TOKEN auto-merge which wouldn't re-trigger this workflow).
+      - uses: googleapis/release-please-action@v5
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-
-      - name: Enable auto-merge on release PR
-        if: ${{ steps.release.outputs.pr }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr).number }}
-        run: gh pr merge --auto --squash "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"
