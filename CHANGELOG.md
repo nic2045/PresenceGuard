@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/nic2045/PresenceGuard/compare/v0.3.5...v0.3.6) (2026-05-29)
+
+
+### Bug Fixes
+
+* sync integration manifest version with releases ([#32](https://github.com/nic2045/PresenceGuard/issues/32)) ([e14b743](https://github.com/nic2045/PresenceGuard/commit/e14b743408dfadcde5f4efaef2c76068de7b3ef9))
+
 ## [0.3.5](https://github.com/nic2045/PresenceGuard/compare/v0.3.4...v0.3.5) (2026-05-28)
 
 
