@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/nic2045/PresenceGuard/compare/v0.3.9...v0.3.10) (2026-05-29)
+
+
+### Bug Fixes
+
+* presence sensor keeps last valid status across hiccups ([#41](https://github.com/nic2045/PresenceGuard/issues/41)) ([d971401](https://github.com/nic2045/PresenceGuard/commit/d9714010064c5eb743d93431bb270443488f1dc0))
+
 ## [0.3.9](https://github.com/nic2045/PresenceGuard/compare/v0.3.8...v0.3.9) (2026-05-29)
 
 
