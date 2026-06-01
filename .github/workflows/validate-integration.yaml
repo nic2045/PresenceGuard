@@ -24,3 +24,38 @@ jobs:
           category: integration
           # Custom-Integration ist (noch) nicht im offiziellen brands-Repo.
           ignore: brands
+
+  import-check:
+    name: Python import check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Home Assistant
+        run: pip install homeassistant
+      - name: Import all integration modules
+        # hassfest/HACS validate only metadata and structure; they never import
+        # the Python code, so a wrong import path (e.g. a non-existent module)
+        # slips through and only fails at runtime when HA loads the integration.
+        # This step actually imports every module to catch that early.
+        run: |
+          python - <<'EOF'
+          import importlib
+          import pathlib
+          import sys
+
+          sys.path.insert(0, ".")
+          root = pathlib.Path("custom_components/presenceguard")
+          failed = False
+          for path in sorted(root.glob("*.py")):
+              module = f"custom_components.presenceguard.{path.stem}"
+              try:
+                  importlib.import_module(module)
+                  print(f"OK   {module}")
+              except Exception as exc:  # noqa: BLE001
+                  failed = True
+                  print(f"FAIL {module}: {exc!r}", file=sys.stderr)
+          sys.exit(1 if failed else 0)
+          EOF
