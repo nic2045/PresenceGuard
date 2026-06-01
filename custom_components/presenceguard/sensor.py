@@ -70,18 +70,25 @@ class PresenceGuardPresenceSensor(
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        data = self.coordinator.data or {}
-        availability = data.get("availability")
-        # Ignore failed polls / PresenceUnknown -> keep the last known status.
-        if _is_valid(availability):
-            self._last_availability = availability
-            self._last_activity = data.get("activity")
+        # Only adopt values from a poll that actually succeeded. On a failed
+        # poll the coordinator keeps its previous data, so re-latching it would
+        # mask the failure with a stale (and possibly wrong) status.
+        if self.coordinator.last_update_success:
+            data = self.coordinator.data or {}
+            availability = data.get("availability")
+            # Ignore transient PresenceUnknown/empty -> keep the last known status.
+            if _is_valid(availability):
+                self._last_availability = availability
+                self._last_activity = data.get("activity")
         super()._handle_coordinator_update()
 
     @property
     def available(self) -> bool:
-        # Stay available once we have any value; don't drop on transient errors.
-        return self._last_availability is not None
+        # Reflect the coordinator's health: if polling fails persistently
+        # (e.g. the token expired and reauth is required), don't keep
+        # presenting a stale value as if it were current. This prevents the
+        # sensor from being stuck on an outdated status (e.g. "Offline").
+        return self.coordinator.last_update_success and self._last_availability is not None
 
     @property
     def native_value(self) -> str | None:
