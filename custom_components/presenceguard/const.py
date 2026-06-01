@@ -1,6 +1,6 @@
 """Constants for the PresenceGuard integration."""
 
-from homeassistant.helpers.device_info import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo
 
 DOMAIN = "presenceguard"
 
