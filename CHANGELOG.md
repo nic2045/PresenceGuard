@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/nic2045/PresenceGuard/compare/v0.3.12...v0.3.13) (2026-06-01)
+
+
+### Bug Fixes
+
+* load failure from wrong DeviceInfo import and presence sensor masking poll/auth failures ([#47](https://github.com/nic2045/PresenceGuard/issues/47)) ([e4627a9](https://github.com/nic2045/PresenceGuard/commit/e4627a9e35090b37ab12a10890336bab87970268))
+
 ## [0.3.12](https://github.com/nic2045/PresenceGuard/compare/v0.3.11...v0.3.12) (2026-06-01)
 
 
