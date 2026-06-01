@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, build_device_info
 from .coordinator import PresenceCoordinator
 
 # Status-dependent icon per Graph availability.
@@ -52,11 +52,7 @@ class PresenceGuardPresenceSensor(
     def __init__(self, coordinator: PresenceCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_presence"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": "PresenceGuard",
-            "manufacturer": "PresenceGuard",
-        }
+        self._attr_device_info = build_device_info(entry.entry_id)
         # Seed from the first poll; updated only with valid values afterwards.
         data = coordinator.data or {}
         self._last_availability: str | None = data.get("availability")

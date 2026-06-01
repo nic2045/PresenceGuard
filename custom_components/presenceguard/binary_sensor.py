@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, build_device_info
 from .coordinator import PresenceCoordinator
 
 
@@ -36,11 +36,7 @@ class PresenceGuardTokenSensor(
     def __init__(self, coordinator: PresenceCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_token"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": "PresenceGuard",
-            "manufacturer": "PresenceGuard",
-        }
+        self._attr_device_info = build_device_info(entry.entry_id)
 
     @property
     def is_on(self) -> bool:

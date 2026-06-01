@@ -1,6 +1,24 @@
 """Constants for the PresenceGuard integration."""
 
+from homeassistant.helpers.device_info import DeviceInfo
+
 DOMAIN = "presenceguard"
+
+# Device registry metadata shown in the HA UI ("device info").
+DEVICE_NAME = "PresenceGuard"
+DEVICE_MANUFACTURER = "nic2045"
+DEVICE_MODEL = "Teams Presence"
+
+
+def build_device_info(entry_id: str) -> DeviceInfo:
+    """Shared device info so all entities map to one correctly labeled device."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry_id)},
+        name=DEVICE_NAME,
+        manufacturer=DEVICE_MANUFACTURER,
+        model=DEVICE_MODEL,
+        configuration_url="https://github.com/nic2045/PresenceGuard",
+    )
 
 # Microsoft Entra OAuth2 (delegated, only your own account -> least privilege).
 # "organizations" allows any work/school account without a fixed tenant.
