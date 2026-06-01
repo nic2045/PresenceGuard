@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.12](https://github.com/nic2045/PresenceGuard/compare/v0.3.11...v0.3.12) (2026-06-01)
+
+
+### Bug Fixes
+
+* set device manufacturer and model in HA device info ([#45](https://github.com/nic2045/PresenceGuard/issues/45)) ([d84798b](https://github.com/nic2045/PresenceGuard/commit/d84798b285966db398b3da4e8d3014b19236c5e9))
+
 ## [0.3.11](https://github.com/nic2045/PresenceGuard/compare/v0.3.10...v0.3.11) (2026-05-29)
 
 
