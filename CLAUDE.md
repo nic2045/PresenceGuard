@@ -31,8 +31,7 @@ Do not edit version strings manually — the workflow handles that.
 
 | Workflow | Purpose |
 |----------|-------|
-| `.github/workflows/validate.yaml` | YAML syntax check of all files under `presenceguard/` (incl. blueprint, schedule, rest_commands) on every push/PR |
-| `.github/workflows/validate-integration.yaml` | `hassfest` (HA manifest/structure) + `hacs/action` (HACS compatibility) for `custom_components/presenceguard/` |
+| `.github/workflows/ci.yaml` | YAML syntax of `presenceguard/` + `hassfest` (HA manifest/structure) + `hacs/action` (HACS compatibility) + `import-check` (imports every `custom_components/presenceguard/` module to catch broken imports), on every push/PR |
 | `.github/workflows/gitleaks.yml` | Secret scan |
 | `.github/workflows/pr-title.yml` | Conventional Commits check of the PR title |
 | `.github/workflows/release-please.yml` | Automated release on push to `main` |

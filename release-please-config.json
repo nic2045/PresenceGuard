@@ -7,21 +7,8 @@
   "bump-patch-for-minor-pre-major": true,
   "packages": {
     ".": {
-      "package-name": "pyshell-starter",
+      "package-name": "presenceguard",
       "extra-files": [
-        {
-          "type": "toml",
-          "path": "pyproject.toml",
-          "jsonpath": "$.project.version"
-        },
-        {
-          "type": "generic",
-          "path": "powershell/PyShellStarter.psd1"
-        },
-        {
-          "type": "generic",
-          "path": "src/pyshell_starter/__init__.py"
-        },
         {
           "type": "generic",
           "path": "presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml"
