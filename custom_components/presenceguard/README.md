@@ -44,6 +44,36 @@ UI-native alternative to the YAML/bash setup: sign in **directly in Home Assista
 These services can be used in automations/blueprints exactly like the previous
 `rest_command.*`.
 
+## Dashboard: colored presence history
+
+Home Assistant's built-in history renders `sensor.presenceguard_presence` as a
+categorical timeline, but assigns colors automatically. To pin a fixed color to
+each Teams state (so you can tell the status apart at a glance), use the
+[History Explorer Card](https://github.com/alexarch21/history-explorer-card)
+(HACS) and map each state under `stateColors`:
+
+```yaml
+type: custom:history-explorer-card
+stateColors:
+  sensor.presenceguard_presence.Available: '#6BB700'      # green
+  sensor.presenceguard_presence.AvailableIdle: '#A0D468'  # light green
+  sensor.presenceguard_presence.Busy: '#C4314B'           # red
+  sensor.presenceguard_presence.BusyIdle: '#E08299'       # light red
+  sensor.presenceguard_presence.DoNotDisturb: '#C50F1F'   # dark red
+  sensor.presenceguard_presence.Away: '#FFAA44'           # amber
+  sensor.presenceguard_presence.BeRightBack: '#FFD24D'    # light amber
+  sensor.presenceguard_presence.Offline: '#8A8886'        # gray
+  sensor.presenceguard_presence.PresenceUnknown: '#C8C6C4' # light gray
+graphs:
+  - type: timeline
+    entities:
+      - entity: sensor.presenceguard_presence
+```
+
+Colors accept HEX, `rgb(...)`, CSS color names, or HA CSS variables (e.g.
+`--primary-color`). The `*Idle` / `PresenceUnknown` rows are short-lived and can
+be dropped if you prefer a leaner config.
+
 ## Reauth (Repairs)
 
 When the sign-in expires (e.g. Conditional Access "Sign-in frequency"), the
