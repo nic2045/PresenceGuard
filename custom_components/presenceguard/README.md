@@ -36,7 +36,10 @@ UI-native alternative to the YAML/bash setup: sign in **directly in Home Assista
 - `binary_sensor.presenceguard_token` – "Connected" as long as the token is valid.
 - Services:
   - `presenceguard.set_offline` – set Offline (OffWork)
-  - `presenceguard.clear_presence` – clear the preferred status
+  - `presenceguard.clear_presence` – clear the preferred status. Optional
+    `fallback` (e.g. `Available`): clearing alone only reverts to the live
+    Teams session status, so without an active Teams client you may keep
+    showing Offline – set a fallback to reliably appear online again.
   - `presenceguard.set_presence` – set `availability` (+ optional `activity`)
   - `presenceguard.set_status_message` – set the Teams status message (note),
     optional `expiry_minutes`; empty message clears it
