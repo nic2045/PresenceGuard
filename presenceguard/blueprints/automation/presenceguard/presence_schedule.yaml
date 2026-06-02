@@ -218,10 +218,36 @@ action:
               - condition: trigger
                 id: window_start
             sequence:
+              # Status setzen und HTTP-Status pruefen (Erfolg = 200/204).
               - service: rest_command.set_teams_presence
+                continue_on_error: true
+                response_variable: set_result
                 data:
                   availability: "{{ presence_status.split('|')[0] }}"
                   activity: "{{ presence_status.split('|')[1] }}"
+              - if:
+                  - condition: template
+                    value_template: >
+                      {{ set_result is not defined
+                         or (set_result.status | default(0)) not in [200, 204] }}
+                then:
+                  - service: persistent_notification.create
+                    data:
+                      notification_id: presenceguard_set_failed
+                      title: "PresenceGuard: Status setzen fehlgeschlagen"
+                      message: >
+                        Der bevorzugte Teams-Status konnte nicht gesetzt werden
+                        (HTTP {{ set_result.status | default('—') if set_result
+                        is defined else '—' }}). Der Token muss evtl. erneuert
+                        werden.
+
+
+                        **[Jetzt erneuern]({{ renew_url }})**
+                else:
+                  # Erfolg -> evtl. vorhandene Fehlermeldung entfernen.
+                  - service: persistent_notification.dismiss
+                    data:
+                      notification_id: presenceguard_set_failed
 
           # Zeitfenster endet -> aufheben oder festen Status setzen.
           - conditions:
@@ -259,7 +285,33 @@ action:
                             data:
                               notification_id: presenceguard_clear_failed
                 default:
+                  # Festen Status setzen und HTTP-Status pruefen (Erfolg = 200/204).
                   - service: rest_command.set_teams_presence
+                    continue_on_error: true
+                    response_variable: set_result
                     data:
                       availability: "{{ end_action.split('|')[0] }}"
                       activity: "{{ end_action.split('|')[1] }}"
+                  - if:
+                      - condition: template
+                        value_template: >
+                          {{ set_result is not defined
+                             or (set_result.status | default(0)) not in [200, 204] }}
+                    then:
+                      - service: persistent_notification.create
+                        data:
+                          notification_id: presenceguard_set_failed
+                          title: "PresenceGuard: Status setzen fehlgeschlagen"
+                          message: >
+                            Der bevorzugte Teams-Status konnte nicht gesetzt
+                            werden (HTTP {{ set_result.status | default('—')
+                            if set_result is defined else '—' }}). Der Token
+                            muss evtl. erneuert werden.
+
+
+                            **[Jetzt erneuern]({{ renew_url }})**
+                    else:
+                      # Erfolg -> evtl. vorhandene Fehlermeldung entfernen.
+                      - service: persistent_notification.dismiss
+                        data:
+                          notification_id: presenceguard_set_failed
