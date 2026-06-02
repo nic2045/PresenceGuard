@@ -48,7 +48,13 @@
     },
     "clear_presence": {
       "name": "Status aufheben",
-      "description": "Hebt den bevorzugten Teams-Status wieder auf."
+      "description": "Hebt den bevorzugten Teams-Status wieder auf.",
+      "fields": {
+        "fallback": {
+          "name": "Fallback-Status",
+          "description": "Optional – nach dem Aufheben diesen bevorzugten Status setzen. Ohne aktive Teams-Sitzung bleibst du sonst evtl. auf „Offline“; mit „Available“ erscheinst du zuverlässig wieder online."
+        }
+      }
     },
     "set_presence": {
       "name": "Status setzen",

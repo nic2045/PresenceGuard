@@ -31,6 +31,16 @@ SET_PRESENCE_SCHEMA = vol.Schema(
     }
 )
 
+CLEAR_PRESENCE_SCHEMA = vol.Schema(
+    {
+        # Optional fallback: after clearing, explicitly set this preferred
+        # presence. Useful because clearUserPreferredPresence only reverts to
+        # the live Teams session status – without an active session the user
+        # may keep showing Offline. "Available" puts them back online reliably.
+        vol.Optional("fallback"): vol.In(list(PRESENCE_OPTIONS)),
+    }
+)
+
 SET_STATUS_MESSAGE_SCHEMA = vol.Schema(
     {
         vol.Required("message"): cv.string,
@@ -97,6 +107,11 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 await api.async_set_preferred_presence("Offline", "OffWork")
             elif call.service == SERVICE_CLEAR:
                 await api.async_clear_preferred_presence()
+                fallback = call.data.get("fallback")
+                if fallback:
+                    await api.async_set_preferred_presence(
+                        fallback, PRESENCE_OPTIONS[fallback]
+                    )
             elif call.service == SERVICE_SET_PRESENCE:
                 availability = call.data["availability"]
                 activity = call.data.get("activity") or PRESENCE_OPTIONS[availability]
@@ -118,7 +133,9 @@ def _async_register_services(hass: HomeAssistant) -> None:
             ) from err
 
     hass.services.async_register(DOMAIN, SERVICE_SET_OFFLINE, _handle)
-    hass.services.async_register(DOMAIN, SERVICE_CLEAR, _handle)
+    hass.services.async_register(
+        DOMAIN, SERVICE_CLEAR, _handle, schema=CLEAR_PRESENCE_SCHEMA
+    )
     hass.services.async_register(
         DOMAIN, SERVICE_SET_PRESENCE, _handle, schema=SET_PRESENCE_SCHEMA
     )

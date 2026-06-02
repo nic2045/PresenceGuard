@@ -48,7 +48,13 @@
     },
     "clear_presence": {
       "name": "Clear status",
-      "description": "Clears the preferred Teams status."
+      "description": "Clears the preferred Teams status.",
+      "fields": {
+        "fallback": {
+          "name": "Fallback status",
+          "description": "Optional. After clearing, explicitly set this preferred status. Without an active Teams session, clearing alone may leave you showing Offline; choose \"Available\" to reliably appear online again."
+        }
+      }
     },
     "set_presence": {
       "name": "Set status",
