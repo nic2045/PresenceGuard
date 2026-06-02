@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.14](https://github.com/nic2045/PresenceGuard/compare/v0.3.13...v0.3.14) (2026-06-02)
+
+
+### Features
+
+* add presence select entity to change Teams status from device ([#52](https://github.com/nic2045/PresenceGuard/issues/52)) ([2a8d472](https://github.com/nic2045/PresenceGuard/commit/2a8d4721c3872f6874f0d21647268a84234749e8))
+* clear_presence fallback + verify set actions + robust Graph calls ([#54](https://github.com/nic2045/PresenceGuard/issues/54)) ([cbdb4cd](https://github.com/nic2045/PresenceGuard/commit/cbdb4cd2edbba44971f42ae2ea6241fae7d71fab))
+
 ## [0.3.13](https://github.com/nic2045/PresenceGuard/compare/v0.3.12...v0.3.13) (2026-06-01)
 
 
