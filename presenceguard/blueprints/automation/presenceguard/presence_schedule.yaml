@@ -231,7 +231,33 @@ action:
               - choose:
                   - conditions: "{{ end_action == 'clear' }}"
                     sequence:
+                      # Aufheben aufrufen und HTTP-Status pruefen (Erfolg = 200/204).
                       - service: rest_command.clear_teams_presence
+                        continue_on_error: true
+                        response_variable: clear_result
+                      - if:
+                          - condition: template
+                            value_template: >
+                              {{ clear_result is not defined
+                                 or (clear_result.status | default(0)) not in [200, 204] }}
+                        then:
+                          - service: persistent_notification.create
+                            data:
+                              notification_id: presenceguard_clear_failed
+                              title: "PresenceGuard: Zurücksetzen fehlgeschlagen"
+                              message: >
+                                Der bevorzugte Teams-Status konnte nicht aufgehoben
+                                werden (HTTP {{ clear_result.status | default('—')
+                                if clear_result is defined else '—' }}). Der Token
+                                muss evtl. erneuert werden.
+
+
+                                **[Jetzt erneuern]({{ renew_url }})**
+                        else:
+                          # Erfolg -> evtl. vorhandene Fehlermeldung entfernen.
+                          - service: persistent_notification.dismiss
+                            data:
+                              notification_id: presenceguard_clear_failed
                 default:
                   - service: rest_command.set_teams_presence
                     data:

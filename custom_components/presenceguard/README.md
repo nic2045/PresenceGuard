@@ -30,6 +30,9 @@ UI-native alternative to the YAML/bash setup: sign in **directly in Home Assista
 - `sensor.presenceguard_presence` – the live Teams availability
   (Available/Busy/Away/DoNotDisturb/Offline…) with a status-dependent icon;
   attribute `activity`.
+- `select.presenceguard_set_presence` – change the preferred Teams presence
+  right from the device page; pick a status (Available/Busy/Away/DoNotDisturb/
+  BeRightBack/Offline) or `Auto` to clear it again.
 - `binary_sensor.presenceguard_token` – "Connected" as long as the token is valid.
 - Services:
   - `presenceguard.set_offline` – set Offline (OffWork)

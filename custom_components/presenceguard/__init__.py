@@ -17,7 +17,7 @@ from .api import AuthError, GraphApi
 from .const import DOMAIN, PRESENCE_OPTIONS
 from .coordinator import PresenceCoordinator
 
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SELECT, Platform.SENSOR]
 
 SERVICE_SET_OFFLINE = "set_offline"
 SERVICE_CLEAR = "clear_presence"

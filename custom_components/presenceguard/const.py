@@ -45,3 +45,14 @@ PRESENCE_OPTIONS = {
     "BeRightBack": "BeRightBack",
     "Away": "Away",
 }
+
+# Extra option in the presence select that clears the preferred presence
+# (i.e. hands control back to the real Teams status).
+SELECT_CLEAR_OPTION = "Auto"
+
+# Graph reports idle variants for some states; map them back to the base
+# option so the select reflects a value the user can actually choose.
+PRESENCE_ALIASES = {
+    "AvailableIdle": "Available",
+    "BusyIdle": "Busy",
+}
