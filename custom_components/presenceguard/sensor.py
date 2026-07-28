@@ -84,11 +84,14 @@ class PresenceGuardPresenceSensor(
 
     @property
     def available(self) -> bool:
-        # Reflect the coordinator's health: if polling fails persistently
-        # (e.g. the token expired and reauth is required), don't keep
-        # presenting a stale value as if it were current. This prevents the
-        # sensor from being stuck on an outdated status (e.g. "Offline").
-        return self.coordinator.last_update_success and self._last_availability is not None
+        # Fully decoupled from poll health: hold the last known status and only
+        # ever change it when a successful poll delivers a new value (see
+        # _handle_coordinator_update). Poll failures - a brief hiccup during the
+        # roughly hourly token refresh, or an expired token pending reauth - do
+        # not flip this sensor to "unavailable"; the token binary_sensor is the
+        # connectivity indicator for that. Only "unavailable" until the first
+        # value is ever known.
+        return self._last_availability is not None
 
     @property
     def native_value(self) -> str | None:
