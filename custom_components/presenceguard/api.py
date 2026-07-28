@@ -54,13 +54,26 @@ class GraphApi:
 
     async def _request(self, method: str, path: str, json: dict | None = None) -> dict | None:
         # Retry transient failures (throttling/backend/network) with a bounded
-        # backoff; auth and other client errors surface immediately.
+        # backoff; auth and other client errors surface immediately. This covers
+        # the token refresh in _headers() as well as the Graph call itself, so a
+        # brief hiccup during the (roughly hourly) token renewal doesn't fail the
+        # poll and flip every entity to "unavailable".
         for attempt in range(MAX_RETRIES + 1):
             try:
                 headers = await self._headers()
             except ClientResponseError as err:
                 if err.status in (400, 401):
                     raise AuthError from err
+                if err.status in RETRYABLE_STATUS and attempt < MAX_RETRIES:
+                    await asyncio.sleep(_retry_after(err.headers or {}))
+                    continue
+                raise
+            except (asyncio.TimeoutError, ClientConnectionError):
+                # Network-level hiccup while refreshing the token -> retry a few
+                # times, then surface it.
+                if attempt < MAX_RETRIES:
+                    await asyncio.sleep(DEFAULT_RETRY_AFTER)
+                    continue
                 raise
 
             try:

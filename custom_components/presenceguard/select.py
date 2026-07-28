@@ -84,7 +84,14 @@ class PresenceGuardPresenceSelect(
 
     @property
     def available(self) -> bool:
-        return self.coordinator.last_update_success
+        # Fully decoupled from poll health: stay operable and hold the last
+        # selected value until a successful poll delivers a new one. Poll
+        # failures (e.g. a hiccup during the roughly hourly token refresh, or an
+        # expired token pending reauth) do not flip the select to "unavailable"
+        # - the token binary_sensor is the connectivity indicator. Setting a
+        # value while the token is expired still triggers reauth via
+        # async_select_option.
+        return True
 
     @property
     def current_option(self) -> str | None:
