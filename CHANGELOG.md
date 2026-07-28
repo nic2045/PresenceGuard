@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.15](https://github.com/nic2045/PresenceGuard/compare/v0.3.14...v0.3.15) (2026-07-28)
+
+
+### Bug Fixes
+
+* retry token refresh on transient errors to avoid hourly outages ([#56](https://github.com/nic2045/PresenceGuard/issues/56)) ([6d9b899](https://github.com/nic2045/PresenceGuard/commit/6d9b89963e9c6dfd98f756a280392950b2bb9187))
+
 ## [0.3.14](https://github.com/nic2045/PresenceGuard/compare/v0.3.13...v0.3.14) (2026-06-02)
 
 
