@@ -25,7 +25,8 @@ jobs:
       - name: Lint
         run: ruff check --output-format=github custom_components/presenceguard
 
-  # YAML syntax of the classic variant (blueprint, schedule, rest_commands, ...).
+  # YAML syntax of the Home Assistant content under presenceguard/ (the
+  # integration blueprint).
   validate:
     name: Validate Home Assistant YAML
     runs-on: ubuntu-latest

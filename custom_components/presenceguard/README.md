@@ -1,9 +1,8 @@
 # PresenceGuard – Custom Integration (HA-native)
 
-UI-native alternative to the YAML/bash setup: sign in **directly in Home Assistant**
-(OAuth2), automatic token renewal and – when the sign-in expires – a
-**reauth card in Settings → Repairs** for signing in again. No
-`token_setup.sh`, no `secrets.yaml`, no shell command.
+Sign in **directly in Home Assistant** (OAuth2), with automatic token renewal
+and – when the sign-in expires – a **reauth card in Settings → Repairs** for
+signing in again. No `token_setup.sh`, no `secrets.yaml`, no shell command.
 
 > Auth model: **delegated** (`Presence.ReadWrite`, only your own account –
 > least privilege). No admin consent needed.
@@ -44,8 +43,7 @@ UI-native alternative to the YAML/bash setup: sign in **directly in Home Assista
   - `presenceguard.set_status_message` – set the Teams status message (note),
     optional `expiry_minutes`; empty message clears it
 
-These services can be used in automations/blueprints exactly like the previous
-`rest_command.*`.
+These services can be used in automations, scripts and blueprints.
 
 ## Dashboard: colored presence history
 
@@ -84,8 +82,3 @@ integration detects this on the next poll and reports `ConfigEntryAuthFailed` �
 Home Assistant **automatically shows a reauth card** under *Settings →
 Devices & Services* or *Repairs*. One click → sign in to Microsoft again,
 and it keeps running. No terminal needed.
-
-> Note: This integration is the UI-native alternative. The classic
-> YAML/bash setup under [`../presenceguard/`](../presenceguard/) remains
-> usable unchanged – use **one of the two**, not both in parallel for the same
-> account.
