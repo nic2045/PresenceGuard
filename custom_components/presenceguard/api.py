@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 from aiohttp import (
     ClientConnectionError,
@@ -19,21 +21,38 @@ from .const import GRAPH_BASE
 # Robustness tunables for Graph calls.
 REQUEST_TIMEOUT = ClientTimeout(total=30)
 MAX_RETRIES = 2  # additional attempts after the first try
-RETRYABLE_STATUS = {429, 503, 504}  # throttling / transient backend errors
+# Throttling / transient backend errors worth retrying (Graph also emits the
+# occasional 500/502 during backend blips).
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 DEFAULT_RETRY_AFTER = 5.0  # seconds, when no usable Retry-After header is given
 MAX_RETRY_AFTER = 60.0  # never back off longer than this
 
 
 def _retry_after(headers: Mapping[str, str]) -> float:
-    """Seconds to wait before retrying, honoring the Retry-After header."""
+    """Seconds to wait before retrying, honoring the Retry-After header.
+
+    Retry-After may be either delta-seconds or an HTTP date; both forms are
+    supported and clamped to [0, MAX_RETRY_AFTER].
+    """
     value = headers.get("Retry-After")
-    if value:
-        try:
-            return min(float(value), MAX_RETRY_AFTER)
-        except ValueError:
-            # Retry-After may be an HTTP date; fall back to a fixed delay.
-            return DEFAULT_RETRY_AFTER
-    return DEFAULT_RETRY_AFTER
+    if not value:
+        return DEFAULT_RETRY_AFTER
+    # Numeric form: delta-seconds.
+    try:
+        return min(max(float(value), 0.0), MAX_RETRY_AFTER)
+    except ValueError:
+        pass
+    # HTTP-date form: compute the delay until that instant.
+    try:
+        when = parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return DEFAULT_RETRY_AFTER
+    if when is None:
+        return DEFAULT_RETRY_AFTER
+    if when.tzinfo is None:  # HTTP dates are GMT; treat naive as UTC.
+        when = when.replace(tzinfo=timezone.utc)
+    delay = (when - datetime.now(timezone.utc)).total_seconds()
+    return min(max(delay, 0.0), MAX_RETRY_AFTER)
 
 
 class AuthError(Exception):
@@ -46,6 +65,9 @@ class GraphApi:
     def __init__(self, websession: ClientSession, oauth_session: OAuth2Session) -> None:
         self._web = websession
         self._oauth = oauth_session
+        # Serializes forced token refreshes so a concurrent poll and service
+        # call don't both spend the (rotated) refresh token on the same 401.
+        self._refresh_lock = asyncio.Lock()
 
     async def _headers(self) -> dict[str, str]:
         await self._oauth.async_ensure_token_valid()
@@ -67,17 +89,24 @@ class GraphApi:
         network handling still apply.
         """
         oauth = self._oauth
-        try:
-            new_token = await oauth.implementation.async_refresh_token(oauth.token)
-        except ClientResponseError as err:
-            # 400/401 here means the refresh token is dead -> real reauth.
-            if err.status in (400, 401):
-                raise AuthError from err
-            raise
-        oauth.hass.config_entries.async_update_entry(
-            oauth.config_entry,
-            data={**oauth.config_entry.data, "token": new_token},
-        )
+        stale_token = oauth.token.get("access_token")
+        async with self._refresh_lock:
+            # A concurrent 401 may have already refreshed while we waited for
+            # the lock. Microsoft rotates refresh tokens, so spending the old
+            # one again would fail; just use the token the other caller got.
+            if oauth.token.get("access_token") != stale_token:
+                return
+            try:
+                new_token = await oauth.implementation.async_refresh_token(oauth.token)
+            except ClientResponseError as err:
+                # 400/401 here means the refresh token is dead -> real reauth.
+                if err.status in (400, 401):
+                    raise AuthError from err
+                raise
+            oauth.hass.config_entries.async_update_entry(
+                oauth.config_entry,
+                data={**oauth.config_entry.data, "token": new_token},
+            )
 
     async def _request(self, method: str, path: str, json: dict | None = None) -> dict | None:
         # Retry transient failures (throttling/backend/network) with a bounded
@@ -143,10 +172,6 @@ class GraphApi:
                     await asyncio.sleep(DEFAULT_RETRY_AFTER)
                     continue
                 raise
-
-    async def async_get_me(self) -> dict:
-        """Profile of the signed-in user (for title/unique ID)."""
-        return await self._request("GET", "/me")
 
     async def async_get_presence(self) -> dict:
         return await self._request("GET", "/me/presence")

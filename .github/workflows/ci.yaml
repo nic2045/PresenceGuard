@@ -10,6 +10,20 @@ permissions:
   contents: read
 
 jobs:
+  # Ruff lint of the custom integration (the lint gate referenced in CLAUDE.md).
+  ruff:
+    name: Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Lint
+        run: ruff check --output-format=github custom_components/presenceguard
+
   # YAML syntax of the classic variant (blueprint, schedule, rest_commands, ...).
   validate:
     name: Validate Home Assistant YAML
