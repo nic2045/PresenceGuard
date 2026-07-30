@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/nic2045/PresenceGuard/compare/v0.4.0...v0.5.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the schedule blueprint ([#62](https://github.com/nic2045/PresenceGuard/issues/62))
+
+### Features
+
+* remove the schedule blueprint ([#62](https://github.com/nic2045/PresenceGuard/issues/62)) ([ab238f9](https://github.com/nic2045/PresenceGuard/commit/ab238f919866b51ebe7ae1f91ab82deed6b7c3a7))
+
 ## [0.4.0](https://github.com/nic2045/PresenceGuard/compare/v0.3.15...v0.4.0) (2026-07-30)
 
 
