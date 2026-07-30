@@ -10,7 +10,7 @@ All commits and PR titles follow [Conventional Commits](https://www.conventional
 
 | Prefix | Semver effect | When |
 |--------|---------------|------|
-| `feat: ...` | minor bump | New user-visible feature (automation, blueprint, REST command) |
+| `feat: ...` | minor bump | New user-visible feature (service, sensor, select) |
 | `fix: ...` | patch bump | Bugfix or behavior correction |
 | `chore: ...` | no bump | Tooling, CI, dependencies |
 | `docs: ...` | no bump | README, CHANGELOG, comments |
@@ -32,7 +32,7 @@ Do not edit version strings manually — the workflow handles that.
 
 | Workflow | Purpose |
 |----------|-------|
-| `.github/workflows/ci.yaml` | `ruff` (lint of `custom_components/presenceguard/`) + YAML syntax of the blueprint under `presenceguard/` + `hassfest` (HA manifest/structure) + `hacs/action` (HACS compatibility) + `import-check` (imports every `custom_components/presenceguard/` module to catch broken imports), on every push/PR |
+| `.github/workflows/ci.yaml` | `ruff` (lint of `custom_components/presenceguard/`) + `hassfest` (HA manifest/structure) + `hacs/action` (HACS compatibility) + `import-check` (imports every `custom_components/presenceguard/` module to catch broken imports), on every push/PR |
 | `.github/workflows/gitleaks.yml` | Secret scan |
 | `.github/workflows/pr-title.yml` | Conventional Commits check of the PR title |
 | `.github/workflows/release-please.yml` | Automated release on push to `main` |
@@ -49,12 +49,12 @@ PresenceGuard is a **custom integration** under `custom_components/presenceguard
 — UI-native OAuth login, automatic token renewal, reauth in *Repairs*.
 HACS-compatible (`hacs.json`). See `custom_components/presenceguard/README.md`.
 
-The `presenceguard/` folder holds supporting Home Assistant content: the one-time
-Entra app-registration guide (`entra_app_setup.md`) and an optional blueprint
-that drives presence from a schedule helper via the integration's services.
+The `presenceguard/` folder holds the one-time Entra app-registration guide
+(`entra_app_setup.md`).
 
-> A classic bash/YAML variant (REST/shell commands + `token_setup.sh`) used to
-> live under `presenceguard/`; it was removed in favor of the integration.
+> A classic bash/YAML variant (REST/shell commands + `token_setup.sh`) and a
+> schedule blueprint used to live under `presenceguard/`; both were removed in
+> favor of the integration.
 
 ## Key files
 
@@ -73,10 +73,3 @@ that drives presence from a schedule helper via the integration's services.
 | File | Purpose |
 |-------|-------|
 | `entra_app_setup.md` | One-time Microsoft Entra app registration guide |
-| `blueprints/automation/presenceguard/presence_schedule_integration.yaml` | Optional blueprint: set presence from a schedule helper via the integration's services |
-
-## HA Custom Tags
-
-The blueprint YAML uses the `!input` tag. It is registered as `yaml.customTags`
-in [`.vscode/settings.json`](.vscode/settings.json) and treated as pass-through
-by the validation workflow.
