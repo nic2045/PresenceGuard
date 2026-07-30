@@ -1,0 +1,15 @@
+# Ruff configuration for the PresenceGuard custom integration.
+#
+# The rule set is pinned explicitly (rather than relying on Ruff's evolving
+# defaults) so the CI lint stays deterministic across Ruff releases. isort is
+# configured to match Home Assistant's import style, under which the existing
+# code was written: a dedicated section for `homeassistant.*` imports and
+# alphabetical sorting within each section.
+target-version = "py313"
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I", "BLE"]
+
+[lint.isort]
+force-sort-within-sections = true
+known-first-party = ["homeassistant"]

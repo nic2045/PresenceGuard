@@ -20,7 +20,8 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install ruff
-        run: pip install ruff
+        # Pinned so the lint result stays reproducible; bump deliberately.
+        run: pip install ruff==0.16.0
       - name: Lint
         run: ruff check --output-format=github custom_components/presenceguard
 
