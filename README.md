@@ -102,26 +102,17 @@ Full integration details:
 PresenceGuard uses Microsoft Graph's **`setUserPreferredPresence`** rather than
 `setPresence`. The preferred status reliably **overrides** the live Teams
 status (including "Offline", which `setPresence` doesn't support) and survives a
-running Teams client; `clearUserPreferredPresence` hands control back. Details
-and the Microsoft rationale:
-[`presenceguard/README.md`](presenceguard/README.md#why-setuserpreferredpresence-instead-of-setpresence).
+running Teams client; `clearUserPreferredPresence` hands control back.
 
 ---
 
-## Prefer pure YAML? (classic mode)
+## Optional: schedule blueprint
 
-PresenceGuard also ships a **no-Python**, bash + YAML setup (blueprint, REST
-commands, token scripts) — handy if you don't want a custom integration. It is
-fully documented and still maintained:
-**[`presenceguard/README.md`](presenceguard/README.md)**.
-
-Import the classic blueprint directly:
+A ready-made blueprint drives your presence from a **schedule helper** using the
+integration's services — import it directly:
 ```
-https://raw.githubusercontent.com/nic2045/PresenceGuard/main/presenceguard/blueprints/automation/presenceguard/presence_schedule.yaml
+https://raw.githubusercontent.com/nic2045/PresenceGuard/main/presenceguard/blueprints/automation/presenceguard/presence_schedule_integration.yaml
 ```
-
-> Use **one** approach per account — the integration **or** the classic YAML
-> setup, not both at once.
 
 ---
 
@@ -130,7 +121,8 @@ https://raw.githubusercontent.com/nic2045/PresenceGuard/main/presenceguard/bluep
 | Path | Purpose |
 | --- | --- |
 | `custom_components/presenceguard/` | **The integration** (OAuth UI login, reauth in Repairs, presence sensor, services); ships its own icon in `brand/` |
-| `presenceguard/` | Classic YAML/bash setup (blueprint, REST/shell commands, token scripts) |
+| `presenceguard/entra_app_setup.md` | One-time Microsoft Entra app registration guide |
+| `presenceguard/blueprints/…/presence_schedule_integration.yaml` | Optional blueprint: set presence from a schedule helper via the integration's services |
 
 Development notes: [`CLAUDE.md`](CLAUDE.md).
 
