@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/nic2045/PresenceGuard/compare/v0.3.15...v0.4.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the classic bash/YAML setup ([#61](https://github.com/nic2045/PresenceGuard/issues/61))
+
+### Features
+
+* remove the classic bash/YAML setup ([#61](https://github.com/nic2045/PresenceGuard/issues/61)) ([3299f9e](https://github.com/nic2045/PresenceGuard/commit/3299f9e65b8e59e27c44cf800fb578b568338306))
+
+
+### Bug Fixes
+
+* force token refresh and retry once on Graph 401 ([#58](https://github.com/nic2045/PresenceGuard/issues/58)) ([982d974](https://github.com/nic2045/PresenceGuard/commit/982d97490b975ec98a43c111183b977896d8f041))
+* harden Graph client and enforce ruff lint in CI ([#60](https://github.com/nic2045/PresenceGuard/issues/60)) ([08be2fc](https://github.com/nic2045/PresenceGuard/commit/08be2fc7aa234beb72847e2c491f0416da1b9c75))
+
 ## [0.3.15](https://github.com/nic2045/PresenceGuard/compare/v0.3.14...v0.3.15) (2026-07-28)
 
 
