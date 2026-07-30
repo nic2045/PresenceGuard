@@ -106,23 +106,12 @@ running Teams client; `clearUserPreferredPresence` hands control back.
 
 ---
 
-## Optional: schedule blueprint
-
-A ready-made blueprint drives your presence from a **schedule helper** using the
-integration's services — import it directly:
-```
-https://raw.githubusercontent.com/nic2045/PresenceGuard/main/presenceguard/blueprints/automation/presenceguard/presence_schedule_integration.yaml
-```
-
----
-
 ## Files
 
 | Path | Purpose |
 | --- | --- |
 | `custom_components/presenceguard/` | **The integration** (OAuth UI login, reauth in Repairs, presence sensor, services); ships its own icon in `brand/` |
 | `presenceguard/entra_app_setup.md` | One-time Microsoft Entra app registration guide |
-| `presenceguard/blueprints/…/presence_schedule_integration.yaml` | Optional blueprint: set presence from a schedule helper via the integration's services |
 
 Development notes: [`CLAUDE.md`](CLAUDE.md).
 
