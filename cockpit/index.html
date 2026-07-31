@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cockpit — Projekt- & Aufgabenübersicht</title>
+  <style>
+    /* ---------- Theme tokens (hell/dunkel) ---------- */
+    :root {
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --border: #e3e8f0;
+      --border-strong: #cbd5e1;
+      --text: #1b2431;
+      --text-dim: #64748b;
+      --text-faint: #94a3b8;
+      --accent: #4f6bed;
+      --accent-soft: #e8ecfd;
+      --shadow: 0 1px 2px rgba(16,24,40,.06), 0 4px 16px rgba(16,24,40,.06);
+
+      --s-backlog: #94a3b8;
+      --s-todo: #6366f1;
+      --s-doing: #f59e0b;
+      --s-review: #a855f7;
+      --s-done: #22c55e;
+
+      --ok: #16a34a;
+      --warn: #d97706;
+      --late: #dc2626;
+
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --panel: #161b22;
+        --panel-2: #1c232d;
+        --border: #263040;
+        --border-strong: #33415380;
+        --text: #e6edf3;
+        --text-dim: #9aa7b8;
+        --text-faint: #6b7787;
+        --accent: #6d86ff;
+        --accent-soft: #1e2740;
+        --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4 { margin: 0; font-weight: 650; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* ---------- Layout ---------- */
+    .app { max-width: 1400px; margin: 0 auto; padding: 20px 22px 60px; }
+
+    header.topbar {
+      display: flex; flex-wrap: wrap; gap: 14px 20px;
+      align-items: center; justify-content: space-between;
+      padding-bottom: 16px; margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand .logo {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      display: grid; place-items: center; color: #fff; font-size: 20px;
+      box-shadow: var(--shadow);
+    }
+    .brand h1 { font-size: 18px; letter-spacing: .2px; }
+    .brand small { color: var(--text-dim); font-size: 12px; font-weight: 500; }
+
+    .topbar .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+    select, .btn {
+      background: var(--panel); color: var(--text);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px;
+    }
+    select { min-width: 190px; }
+
+    /* ---------- Segmented toggle ---------- */
+    .segmented {
+      display: inline-flex; background: var(--panel-2);
+      border: 1px solid var(--border); border-radius: 999px; padding: 3px;
+    }
+    .segmented button {
+      border: 0; background: transparent; color: var(--text-dim);
+      padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 550;
+      display: inline-flex; align-items: center; gap: 6px; transition: .15s;
+    }
+    .segmented button[aria-pressed="true"] {
+      background: var(--panel); color: var(--text);
+      box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+
+    /* ---------- Project meta / details ---------- */
+    .project-head {
+      display: flex; flex-wrap: wrap; align-items: flex-start;
+      justify-content: space-between; gap: 16px; margin-bottom: 18px;
+    }
+    .project-head .title-block h2 { font-size: 20px; }
+    .project-head .title-block p { margin: 4px 0 0; color: var(--text-dim); max-width: 60ch; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border-strong);
+    }
+    .badge.type-agil { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+    .badge.type-wasserfall { background: #fff4e6; color: #b45309; border-color: transparent; }
+    @media (prefers-color-scheme: dark) {
+      .badge.type-wasserfall { background: #3a2a12; color: #f0b45e; }
+    }
+
+    /* Details (Projekttyp – wird einmal eingestellt) */
+    details.settings {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+      min-width: 280px;
+    }
+    details.settings > summary {
+      list-style: none; cursor: pointer; padding: 12px 14px;
+      display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px;
+    }
+    details.settings > summary::-webkit-details-marker { display: none; }
+    details.settings > summary .chev { margin-left: auto; color: var(--text-faint); transition: .2s; }
+    details.settings[open] > summary .chev { transform: rotate(90deg); }
+    .settings-body { padding: 4px 14px 14px; border-top: 1px solid var(--border); }
+    .settings-body .hint { color: var(--text-dim); font-size: 12px; margin: 8px 0 12px; }
+    .radio-row { display: flex; gap: 8px; }
+    .radio-card {
+      flex: 1; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+      padding: 10px; cursor: pointer; transition: .15s; background: var(--panel-2);
+    }
+    .radio-card:hover { border-color: var(--accent); }
+    .radio-card.active { border-color: var(--accent); background: var(--accent-soft); }
+    .radio-card strong { display: block; font-size: 13px; }
+    .radio-card span { font-size: 11px; color: var(--text-dim); }
+    .radio-card input { display: none; }
+
+    /* ---------- Level sections (zwei Ebenen) ---------- */
+    .level { margin-bottom: 26px; }
+    .level-head {
+      display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px;
+    }
+    .level-tag {
+      font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+      color: #fff; padding: 3px 8px; border-radius: 6px;
+    }
+    .level-tag.l1 { background: #8b5cf6; }
+    .level-tag.l2 { background: var(--accent); }
+    .level-head h3 { font-size: 15px; }
+    .level-head .sub { color: var(--text-dim); font-size: 12px; }
+    .level-head .count { margin-left: auto; color: var(--text-faint); font-size: 12px; }
+
+    /* ---------- Milestone cards (Ebene 1) ---------- */
+    .milestone-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;
+    }
+    .m-card {
+      background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+      border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow);
+    }
+    .m-card.is-late { border-left-color: var(--late); }
+    .m-card.is-done { border-left-color: var(--done, var(--s-done)); }
+    .m-card .m-top { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+    .m-card h4 { font-size: 14px; }
+    .m-card .m-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; color: var(--text-dim); font-size: 12px; }
+    .m-card .m-meta b { color: var(--text); font-weight: 600; }
+    .progress { height: 7px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+    .progress > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #8b5cf6); }
+    .due-chip { font-weight: 600; }
+    .due-chip.ok { color: var(--ok); }
+    .due-chip.warn { color: var(--warn); }
+    .due-chip.late { color: var(--late); }
+
+    /* ---------- Kanban (Ebene 2, agil) ---------- */
+    .kanban {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .kanban .col {
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px; min-height: 80px;
+    }
+    .kanban .col-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .kanban .col-head .dot { width: 9px; height: 9px; border-radius: 50%; }
+    .kanban .col-head h5 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-dim); }
+    .kanban .col-head .n { margin-left: auto; font-size: 12px; color: var(--text-faint); background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; }
+
+    .story {
+      background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px; margin-bottom: 8px; box-shadow: var(--shadow);
+    }
+    .story:last-child { margin-bottom: 0; }
+    .story .s-title { font-size: 13px; font-weight: 550; }
+    .story .s-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .tag {
+      font-size: 11px; padding: 1px 7px; border-radius: 6px;
+      background: var(--panel-2); border: 1px solid var(--border); color: var(--text-dim);
+    }
+    .points { font-size: 11px; font-weight: 700; color: var(--accent); }
+    .avatar {
+      margin-left: auto; width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); color: #fff; display: grid; place-items: center;
+      font-size: 10px; font-weight: 700;
+    }
+
+    /* Kanban → einspaltige Liste, wenn zu wenig Platz (Responsive-Fallback) */
+    .kanban-note { display: none; color: var(--text-dim); font-size: 12px; margin-bottom: 10px; }
+    @media (max-width: 900px) {
+      .kanban { grid-template-columns: 1fr; }
+      .kanban .col { min-height: auto; }
+      .kanban-note { display: block; }
+    }
+
+    /* ---------- Liste (Waterfall & Fallback) ---------- */
+    .list-group { margin-bottom: 14px; }
+    .list-group > .lg-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; color: var(--text-dim); }
+    .list-row {
+      display: grid; grid-template-columns: 22px 1fr auto auto auto; gap: 12px; align-items: center;
+      background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 12px; margin-bottom: 6px;
+    }
+    .list-row .st-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .list-row .st-title { font-weight: 550; }
+    .list-row .st-title small { display: block; color: var(--text-faint); font-weight: 400; font-size: 11px; }
+    .list-row .col-status { font-size: 12px; color: var(--text-dim); min-width: 84px; }
+    @media (max-width: 640px) {
+      .list-row { grid-template-columns: 18px 1fr auto; }
+      .list-row .col-status, .list-row .points { display: none; }
+    }
+
+    /* ---------- Timeline ---------- */
+    .timeline-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); }
+    .timeline { min-width: 760px; padding: 0 0 14px; position: relative; }
+    .tl-axis { position: relative; height: 34px; border-bottom: 1px solid var(--border); margin: 0 16px; }
+    .tl-tick { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; color: var(--text-faint); }
+    .tl-tick::after { content: ""; position: absolute; left: 50%; top: 20px; width: 1px; height: 9px; background: var(--border-strong); }
+    .tl-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--late); opacity: .7; z-index: 3; }
+    .tl-today span { position: absolute; top: -2px; left: 4px; font-size: 10px; color: var(--late); font-weight: 700; white-space: nowrap; }
+
+    .tl-lane-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text-faint); margin: 14px 16px 6px; }
+    .tl-track { position: relative; margin: 0 16px; height: 30px; }
+    .tl-track + .tl-track { margin-top: 4px; }
+    .tl-bar {
+      position: absolute; top: 4px; height: 22px; border-radius: 6px;
+      background: var(--accent); color: #fff; font-size: 11px; font-weight: 600;
+      display: flex; align-items: center; padding: 0 8px; white-space: nowrap; overflow: hidden;
+      box-shadow: var(--shadow); min-width: 8px;
+    }
+    .tl-bar.s-done { background: var(--s-done); }
+    .tl-bar.s-doing { background: var(--s-doing); }
+    .tl-bar.s-review { background: var(--s-review); }
+    .tl-bar.s-todo { background: var(--s-todo); }
+    .tl-bar.s-backlog { background: var(--s-backlog); }
+    .tl-ms {
+      position: absolute; top: 2px; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 2px; z-index: 2;
+    }
+    .tl-ms .diamond { width: 16px; height: 16px; background: #8b5cf6; transform: rotate(45deg); border-radius: 3px; box-shadow: var(--shadow); }
+    .tl-ms.is-late .diamond { background: var(--late); }
+    .tl-ms .lbl { font-size: 10px; color: var(--text-dim); white-space: nowrap; max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; color: var(--text-dim); font-size: 12px; }
+    .legend .k { display: inline-flex; align-items: center; gap: 6px; }
+    .legend .sw { width: 12px; height: 12px; border-radius: 3px; }
+
+    .empty { color: var(--text-faint); font-size: 13px; padding: 20px; text-align: center; }
+    footer { margin-top: 30px; color: var(--text-faint); font-size: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">🛫</div>
+        <div>
+          <h1>Cockpit</h1>
+          <small>Projekt- & Aufgabenübersicht</small>
+        </div>
+      </div>
+      <div class="controls">
+        <select id="projectSelect" aria-label="Projekt auswählen"></select>
+        <div class="segmented" id="viewToggle" role="group" aria-label="Ansicht umschalten">
+          <button data-view="liste" aria-pressed="true">▤ Liste</button>
+          <button data-view="timeline" aria-pressed="false">▦ Timeline</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="project-head">
+      <div class="title-block">
+        <h2 id="projName">—</h2>
+        <p id="projDesc"></p>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge" id="typeBadge"></span>
+          <span class="badge" id="dueBadge"></span>
+        </div>
+      </div>
+
+      <details class="settings" id="settings">
+        <summary>⚙︎ Projekt-Details <span class="chev">›</span></summary>
+        <div class="settings-body">
+          <p class="hint">Der Projekttyp wird einmalig festgelegt und steuert die Darstellung
+            der Aufgaben (Ebene 2). Agile Projekte zeigen ein Kanban-Board, sofern der Platz reicht.</p>
+          <div class="radio-row" id="typeRadios">
+            <label class="radio-card" data-type="wasserfall">
+              <input type="radio" name="ptype" value="wasserfall" />
+              <strong>💧 Wasserfall</strong>
+              <span>Phasen &amp; Termine — Liste/Timeline im Fokus</span>
+            </label>
+            <label class="radio-card" data-type="agil">
+              <input type="radio" name="ptype" value="agil" />
+              <strong>🔁 Agil</strong>
+              <span>Kanban-Board nach Status</span>
+            </label>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- Ebene 1: Meilensteine -->
+    <section class="level" id="levelMilestones">
+      <div class="level-head">
+        <span class="level-tag l1">Ebene 1</span>
+        <h3>Meilensteine</h3>
+        <span class="sub">— Wo muss neu geplant werden?</span>
+        <span class="count" id="msCount"></span>
+      </div>
+      <div id="milestoneArea"></div>
+    </section>
+
+    <!-- Ebene 2: Storys / Aufgaben -->
+    <section class="level" id="levelStories">
+      <div class="level-head">
+        <span class="level-tag l2">Ebene 2</span>
+        <h3>Storys &amp; Aufgaben</h3>
+        <span class="sub">— Welche Aufgabe muss bearbeitet werden?</span>
+        <span class="count" id="stCount"></span>
+      </div>
+      <div id="storyArea"></div>
+    </section>
+
+    <footer>Cockpit · Prototyp · Ansicht: <span id="viewLabel">Liste</span> · Projekttyp einmalig in „Projekt-Details" einstellbar</footer>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    // ---------- Statusdefinition (Kanban-Spalten) ----------
+    const STATUS = [
+      { key: "backlog", label: "Backlog", color: "var(--s-backlog)" },
+      { key: "todo",    label: "To Do",   color: "var(--s-todo)" },
+      { key: "doing",   label: "In Arbeit", color: "var(--s-doing)" },
+      { key: "review",  label: "Review",  color: "var(--s-review)" },
+      { key: "done",    label: "Fertig",  color: "var(--s-done)" },
+    ];
+    const statusLabel = k => (STATUS.find(s => s.key === k) || {}).label || k;
+
+    // ---------- Beispieldaten ----------
+    const DATA = {
+      projects: [
+        {
+          id: "apollo",
+          name: "Apollo — Kundenportal 2.0",
+          desc: "Relaunch des Self-Service-Portals mit neuem Login und Dashboard.",
+          type: "agil",
+          milestones: [
+            { id: "m1", title: "MVP Login", due: "2026-08-14" },
+            { id: "m2", title: "Dashboard Beta", due: "2026-09-05" },
+            { id: "m3", title: "Public Launch", due: "2026-10-10" },
+          ],
+          stories: [
+            { id: "s1",  title: "OAuth-Login umbauen", milestone: "m1", status: "done",   due: "2026-08-04", points: 5, who: "NA" },
+            { id: "s2",  title: "Passwort-Reset-Flow", milestone: "m1", status: "review", due: "2026-08-11", points: 3, who: "LM" },
+            { id: "s3",  title: "Session-Handling härten", milestone: "m1", status: "doing", due: "2026-08-13", points: 5, who: "NA" },
+            { id: "s4",  title: "Dashboard-Grid Layout", milestone: "m2", status: "doing", due: "2026-08-26", points: 8, who: "KP" },
+            { id: "s5",  title: "Widget: Rechnungen", milestone: "m2", status: "todo",  due: "2026-08-29", points: 5, who: "LM" },
+            { id: "s6",  title: "Widget: Support-Tickets", milestone: "m2", status: "todo", due: "2026-09-02", points: 5, who: "KP" },
+            { id: "s7",  title: "Barrierefreiheit prüfen", milestone: "m2", status: "backlog", due: "2026-09-04", points: 3, who: "NA" },
+            { id: "s8",  title: "Lasttest & Monitoring", milestone: "m3", status: "backlog", due: "2026-10-01", points: 8, who: "KP" },
+            { id: "s9",  title: "Marketing-Seite verknüpfen", milestone: "m3", status: "backlog", due: "2026-10-08", points: 2, who: "LM" },
+          ],
+        },
+        {
+          id: "titan",
+          name: "Titan — Rechenzentrums-Migration",
+          desc: "Umzug der Legacy-Systeme in die neue Umgebung — strikt phasenbasiert.",
+          type: "wasserfall",
+          milestones: [
+            { id: "n1", title: "Analyse abgeschlossen", due: "2026-07-25" },
+            { id: "n2", title: "Design freigegeben", due: "2026-08-20" },
+            { id: "n3", title: "Migration durchgeführt", due: "2026-09-30" },
+            { id: "n4", title: "Abnahme", due: "2026-10-25" },
+          ],
+          stories: [
+            { id: "t1", title: "Bestandsaufnahme Server", milestone: "n1", status: "done", due: "2026-07-15", points: 5, who: "RS" },
+            { id: "t2", title: "Abhängigkeiten kartieren", milestone: "n1", status: "done", due: "2026-07-24", points: 8, who: "RS" },
+            { id: "t3", title: "Zielarchitektur entwerfen", milestone: "n2", status: "review", due: "2026-08-12", points: 8, who: "MB" },
+            { id: "t4", title: "Netzplan & Firewalling", milestone: "n2", status: "doing", due: "2026-08-18", points: 5, who: "MB" },
+            { id: "t5", title: "Migrationsskripte", milestone: "n3", status: "todo", due: "2026-09-10", points: 13, who: "RS" },
+            { id: "t6", title: "Cutover-Wochenende", milestone: "n3", status: "backlog", due: "2026-09-28", points: 8, who: "MB" },
+            { id: "t7", title: "Abnahmeprotokoll", milestone: "n4", status: "backlog", due: "2026-10-22", points: 3, who: "RS" },
+          ],
+        },
+      ],
+    };
+
+    // ---------- State ----------
+    const LS_TYPE = "cockpit.projectType.";   // + projectId
+    const LS_PROJ = "cockpit.activeProject";
+    const LS_VIEW = "cockpit.view";
+
+    const state = {
+      projectId: localStorage.getItem(LS_PROJ) || DATA.projects[0].id,
+      view: localStorage.getItem(LS_VIEW) || "liste",
+    };
+    if (!DATA.projects.some(p => p.id === state.projectId)) state.projectId = DATA.projects[0].id;
+
+    function currentProject() {
+      const p = DATA.projects.find(x => x.id === state.projectId);
+      // Persistierter Typ überschreibt Default (wird "einmal eingestellt").
+      const saved = localStorage.getItem(LS_TYPE + p.id);
+      return saved ? { ...p, type: saved } : p;
+    }
+
+    // ---------- Datums-Helfer ----------
+    const DAY = 86400000;
+    const today = startOfDay(new Date());
+    function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+    function parse(d) { return startOfDay(new Date(d + "T00:00:00")); }
+    function fmt(d) { return parse(d).toLocaleDateString("de-DE", { day: "2-digit", month: "short" }); }
+    function daysUntil(d) { return Math.round((parse(d) - today) / DAY); }
+    function dueClass(d, done) {
+      if (done) return "ok";
+      const n = daysUntil(d);
+      if (n < 0) return "late";
+      if (n <= 5) return "warn";
+      return "ok";
+    }
+    function dueText(d, done) {
+      const n = daysUntil(d);
+      if (done) return "erledigt";
+      if (n < 0) return `${-n} T. überfällig`;
+      if (n === 0) return "heute fällig";
+      if (n === 1) return "morgen fällig";
+      return `in ${n} Tagen`;
+    }
+
+    // ---------- Aggregation ----------
+    function storiesFor(p, msId) { return p.stories.filter(s => s.milestone === msId); }
+    function milestoneProgress(p, msId) {
+      const list = storiesFor(p, msId);
+      if (!list.length) return { done: 0, total: 0, pct: 0 };
+      const done = list.filter(s => s.status === "done").length;
+      return { done, total: list.length, pct: Math.round(done / list.length * 100) };
+    }
+    function isMilestoneDone(p, msId) {
+      const pr = milestoneProgress(p, msId);
+      return pr.total > 0 && pr.done === pr.total;
+    }
+
+    // ---------- DOM-Helfer ----------
+    const $ = sel => document.querySelector(sel);
+    function el(tag, cls, html) {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (html != null) n.innerHTML = html;
+      return n;
+    }
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+    // ================= RENDER =================
+    function render() {
+      const p = currentProject();
+
+      // Projekt-Dropdown
+      const sel = $("#projectSelect");
+      if (!sel.options.length) {
+        DATA.projects.forEach(pr => sel.add(new Option(pr.name, pr.id)));
+      }
+      sel.value = p.id;
+
+      // Kopf
+      $("#projName").textContent = p.name;
+      $("#projDesc").textContent = p.desc;
+
+      const tBadge = $("#typeBadge");
+      tBadge.className = "badge type-" + p.type;
+      tBadge.textContent = (p.type === "agil" ? "🔁 Agil" : "💧 Wasserfall");
+
+      // Nächster fälliger Meilenstein
+      const openMs = p.milestones
+        .filter(m => !isMilestoneDone(p, m.id))
+        .sort((a, b) => parse(a.due) - parse(b.due))[0];
+      const dBadge = $("#dueBadge");
+      if (openMs) {
+        const cls = dueClass(openMs.due, false);
+        dBadge.className = "badge";
+        dBadge.innerHTML = `📅 Nächster: <b style="margin-left:4px">${esc(openMs.title)}</b>
+          &nbsp;<span class="due-chip ${cls}">${dueText(openMs.due, false)}</span>`;
+      } else {
+        dBadge.className = "badge";
+        dBadge.textContent = "✓ Alle Meilensteine erledigt";
+      }
+
+      // Settings-Radios
+      document.querySelectorAll("#typeRadios .radio-card").forEach(card => {
+        const active = card.dataset.type === p.type;
+        card.classList.toggle("active", active);
+        card.querySelector("input").checked = active;
+      });
+
+      // View-Toggle
+      document.querySelectorAll("#viewToggle button").forEach(b =>
+        b.setAttribute("aria-pressed", String(b.dataset.view === state.view)));
+      $("#viewLabel").textContent = state.view === "timeline" ? "Timeline" : "Liste";
+
+      // Zähler
+      $("#msCount").textContent = p.milestones.length + " Meilensteine";
+      $("#stCount").textContent = p.stories.length + " Aufgaben";
+
+      if (state.view === "timeline") {
+        renderTimeline(p);
+      } else {
+        renderMilestones(p);
+        renderStories(p);
+      }
+    }
+
+    // ---------- Ebene 1: Meilensteine (Karten) ----------
+    function renderMilestones(p) {
+      $("#levelMilestones").style.display = "";
+      const area = $("#milestoneArea");
+      area.innerHTML = "";
+      const grid = el("div", "milestone-grid");
+
+      p.milestones.slice().sort((a,b) => parse(a.due) - parse(b.due)).forEach(m => {
+        const pr = milestoneProgress(p, m.id);
+        const done = isMilestoneDone(p, m.id);
+        const late = !done && daysUntil(m.due) < 0;
+        const card = el("div", "m-card" + (late ? " is-late" : done ? " is-done" : ""));
+        const cls = dueClass(m.due, done);
+        card.innerHTML = `
+          <div class="m-top">
+            <h4>${esc(m.title)}</h4>
+            <span class="due-chip ${cls}">${dueText(m.due, done)}</span>
+          </div>
+          <div class="m-meta">
+            <span>📅 <b>${fmt(m.due)}</b></span>
+            <span>✓ <b>${pr.done}/${pr.total}</b> Aufgaben</span>
+            ${late ? '<span style="color:var(--late);font-weight:600">⚠ neu planen</span>' : ""}
+          </div>
+          <div class="progress" title="${pr.pct}%"><i style="width:${pr.pct}%"></i></div>`;
+        grid.appendChild(card);
+      });
+      area.appendChild(grid);
+    }
+
+    // ---------- Ebene 2: Storys ----------
+    function renderStories(p) {
+      $("#levelStories").style.display = "";
+      const area = $("#storyArea");
+      area.innerHTML = "";
+      // Agil → Kanban (mit Responsive-Fallback per CSS). Wasserfall → Liste nach Meilenstein.
+      if (p.type === "agil") area.appendChild(buildKanban(p));
+      else area.appendChild(buildGroupedList(p));
+    }
+
+    function storyCard(s) {
+      const card = el("div", "story");
+      const overdue = s.status !== "done" && daysUntil(s.due) < 0;
+      card.innerHTML = `
+        <div class="s-title">${esc(s.title)}</div>
+        <div class="s-foot">
+          <span class="tag" style="${overdue ? 'color:var(--late);border-color:var(--late)' : ''}">📅 ${fmt(s.due)}</span>
+          <span class="points">${s.points} SP</span>
+          <span class="avatar" title="Zuständig">${esc(s.who)}</span>
+        </div>`;
+      return card;
+    }
+
+    function buildKanban(p) {
+      const wrap = el("div");
+      wrap.appendChild(el("div", "kanban-note",
+        "ℹ︎ Wenig Platz — Kanban-Spalten werden untereinander angezeigt."));
+      const board = el("div", "kanban");
+      STATUS.forEach(col => {
+        const list = p.stories.filter(s => s.status === col.key);
+        const c = el("div", "col");
+        c.innerHTML = `<div class="col-head">
+            <span class="dot" style="background:${col.color}"></span>
+            <h5>${col.label}</h5><span class="n">${list.length}</span>
+          </div>`;
+        list.sort((a,b) => parse(a.due) - parse(b.due)).forEach(s => c.appendChild(storyCard(s)));
+        if (!list.length) c.appendChild(el("div", "empty", "—"));
+        board.appendChild(c);
+      });
+      wrap.appendChild(board);
+      return wrap;
+    }
+
+    function buildGroupedList(p) {
+      const wrap = el("div");
+      p.milestones.slice().sort((a,b) => parse(a.due) - parse(b.due)).forEach(m => {
+        const list = storiesFor(p, m.id).sort((a,b) => parse(a.due) - parse(b.due));
+        if (!list.length) return;
+        const g = el("div", "list-group");
+        g.appendChild(el("div", "lg-head",
+          `<span class="level-tag l1" style="font-size:10px">Meilenstein</span>
+           <b>${esc(m.title)}</b> · fällig ${fmt(m.due)}`));
+        list.forEach(s => {
+          const st = STATUS.find(x => x.key === s.status) || {};
+          const overdue = s.status !== "done" && daysUntil(s.due) < 0;
+          const row = el("div", "list-row");
+          row.innerHTML = `
+            <span class="st-dot" style="background:${st.color}"></span>
+            <span class="st-title">${esc(s.title)}<small>${s.points} Story Points · ${esc(s.who)}</small></span>
+            <span class="col-status">${statusLabel(s.status)}</span>
+            <span class="due-chip ${dueClass(s.due, s.status==='done')}">${overdue ? "überfällig" : fmt(s.due)}</span>
+            <span class="points">${s.points} SP</span>`;
+          g.appendChild(row);
+        });
+        wrap.appendChild(g);
+      });
+      return wrap;
+    }
+
+    // ---------- Timeline (beide Ebenen auf Zeitachse) ----------
+    function renderTimeline(p) {
+      // In der Timeline zeigen wir beide Ebenen gemeinsam; Karten-Bereiche leeren.
+      $("#milestoneArea").innerHTML = "";
+      $("#storyArea").innerHTML = "";
+      $("#levelStories").style.display = "none";
+
+      const host = $("#milestoneArea");
+      const all = [...p.milestones.map(m => parse(m.due)), ...p.stories.map(s => parse(s.due)), today];
+      let min = new Date(Math.min(...all)), max = new Date(Math.max(...all));
+      min = new Date(min - 3 * DAY); max = new Date(+max + 3 * DAY);
+      const span = Math.max(1, (max - min) / DAY);
+      const pctOf = d => ((parse(d) - min) / DAY) / span * 100;
+      const pctRaw = dateObj => ((startOfDay(dateObj) - min) / DAY) / span * 100;
+
+      const wrap = el("div", "timeline-wrap");
+      const tl = el("div", "timeline");
+
+      // Achse mit ~Wochenticks
+      const axis = el("div", "tl-axis");
+      const step = Math.max(7, Math.ceil(span / 8));
+      for (let i = 0; i <= span; i += step) {
+        const d = new Date(+min + i * DAY);
+        const t = el("div", "tl-tick", d.toLocaleDateString("de-DE", { day:"2-digit", month:"short" }));
+        t.style.left = (i / span * 100) + "%";
+        axis.appendChild(t);
+      }
+      const todayLine = el("div", "tl-today", '<span>Heute</span>');
+      todayLine.style.left = pctRaw(today) + "%";
+      axis.appendChild(todayLine);
+      tl.appendChild(axis);
+
+      // Ebene 1 — Meilensteine
+      tl.appendChild(el("div", "tl-lane-label", "Ebene 1 · Meilensteine"));
+      const msTrack = el("div", "tl-track");
+      p.milestones.forEach(m => {
+        const done = isMilestoneDone(p, m.id);
+        const late = !done && daysUntil(m.due) < 0;
+        const ms = el("div", "tl-ms" + (late ? " is-late" : ""));
+        ms.style.left = pctOf(m.due) + "%";
+        ms.innerHTML = `<div class="diamond" title="${esc(m.title)} · ${fmt(m.due)}"></div>
+                        <div class="lbl">${esc(m.title)}</div>`;
+        msTrack.appendChild(ms);
+      });
+      tl.appendChild(msTrack);
+
+      // Ebene 2 — Storys, gruppiert pro Meilenstein als eigene Zeile
+      tl.appendChild(el("div", "tl-lane-label", "Ebene 2 · Storys & Aufgaben"));
+      p.milestones.slice().sort((a,b)=>parse(a.due)-parse(b.due)).forEach(m => {
+        const list = storiesFor(p, m.id).sort((a,b) => parse(a.due) - parse(b.due));
+        if (!list.length) return;
+        // Meilenstein-Trenner-Label links
+        const lane = el("div");
+        lane.appendChild(el("div", "tl-lane-label", "◆ " + esc(m.title)));
+        // Jede Story bekommt eine eigene Zeile → keine Überlappung der Balken.
+        list.forEach(s => {
+          const track = el("div", "tl-track");
+          const dueP = pctOf(s.due);
+          const startP = Math.max(0, pctOf(s.due) - (5 / span * 100));
+          const bar = el("div", "tl-bar s-" + s.status);
+          bar.style.left = startP + "%";
+          bar.style.width = Math.max(9, dueP - startP) + "%";
+          bar.title = `${s.title} · ${statusLabel(s.status)} · fällig ${fmt(s.due)}`;
+          bar.textContent = s.title;
+          track.appendChild(bar);
+          lane.appendChild(track);
+        });
+        tl.appendChild(lane);
+      });
+
+      // Legende
+      const legend = el("div", "legend");
+      legend.style.margin = "12px 16px 0";
+      STATUS.forEach(s =>
+        legend.appendChild(el("span", "k",
+          `<span class="sw" style="background:${s.color}"></span>${s.label}`)));
+      legend.appendChild(el("span", "k",
+        `<span class="sw" style="background:#8b5cf6;transform:rotate(45deg)"></span>Meilenstein`));
+      tl.appendChild(legend);
+
+      wrap.appendChild(tl);
+      host.appendChild(wrap);
+      $("#levelMilestones").style.display = "";
+    }
+
+    // ================= EVENTS =================
+    $("#projectSelect").addEventListener("change", e => {
+      state.projectId = e.target.value;
+      localStorage.setItem(LS_PROJ, state.projectId);
+      render();
+    });
+
+    document.querySelectorAll("#viewToggle button").forEach(b =>
+      b.addEventListener("click", () => {
+        state.view = b.dataset.view;
+        localStorage.setItem(LS_VIEW, state.view);
+        render();
+      }));
+
+    document.querySelectorAll("#typeRadios .radio-card").forEach(card =>
+      card.addEventListener("click", () => {
+        const t = card.dataset.type;
+        localStorage.setItem(LS_TYPE + state.projectId, t);
+        render();
+      }));
+
+    render();
+  })();
+  </script>
+</body>
+</html>
