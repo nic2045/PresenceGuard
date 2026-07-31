@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/nic2045/PresenceGuard/compare/v0.5.0...v0.5.1) (2026-07-31)
+
+
+### Reverts
+
+* remove Cockpit project/task overview prototype ([#65](https://github.com/nic2045/PresenceGuard/issues/65)) ([a3e79ef](https://github.com/nic2045/PresenceGuard/commit/a3e79efb0aa76b815738d3014de4a7358f83dbdb))
+
 ## [0.5.0](https://github.com/nic2045/PresenceGuard/compare/v0.4.0...v0.5.0) (2026-07-30)
 
 
